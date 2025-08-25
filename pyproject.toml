@@ -1,0 +1,22 @@
+[project]
+name = 'resdp'
+version = "0.0.1"
+dependencies = [
+    'pandas',
+    'numpy',
+    'chardet'
+]
+requires-python =">=3.11"
+[project.optional-dependencies]
+dev = [
+    'pytest',
+    'ruff',
+    'pandas-stubs'
+    ]
+[tool.ruff]
+[lint]
+select = [
+    'D'
+]
+[format]
+quote-style = 'single'
