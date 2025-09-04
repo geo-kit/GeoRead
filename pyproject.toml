@@ -12,7 +12,8 @@ dev = [
     'pytest',
     'ruff',
     'pandas-stubs',
-    'basedpyright'
+    'basedpyright',
+    'pre-commit'
     ]
 [tool.ruff]
 [tool.ruff.lint]
