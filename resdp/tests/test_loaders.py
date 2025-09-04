@@ -1,63 +1,72 @@
+from collections.abc import Iterator, Sequence
 import itertools
+from typing import cast
 import pytest
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from resdp.load_utils import LOADERS, decompress_array, parse_vals
 
 from resdp.data_directory import (
     INT_NAN,
     ArrayWithUnits,
+    DataType,
     DataTypes,
     DATA_DIRECTORY,
+    KeywordSpecification,
+    RecordsSpecification,
+    StatementSpecification,
+    TableSpecification,
+    ValueType,
     get_dynamic_keyword_specification,
 )
 
 TEST_DATA = {
     DataTypes.STRING: [
-        (("\n".join(("TITLE", "abc /", "", "")), None), ("TITLE", "abc")),
-        (("\n".join(("TITLE", "abc", "/", "")), None), ("TITLE", "abc")),
-        (("\n".join(("TITLE", "abc", "", "")), None), ("TITLE", "abc")),
+        (('\n'.join(('TITLE', 'abc /', '', '')), None), ('TITLE', 'abc')),
+        (('\n'.join(('TITLE', 'abc', '/', '')), None), ('TITLE', 'abc')),
+        (('\n'.join(('TITLE', 'abc', '', '')), None), ('TITLE', 'abc')),
         (
-            ("\n".join(("TITLE", "MODEL COMP FAULT TEST", "", "abc")), None),
-            ("TITLE", "MODEL COMP FAULT TEST"),
+            ('\n'.join(('TITLE', 'MODEL COMP FAULT TEST', '', 'abc')), None),
+            ('TITLE', 'MODEL COMP FAULT TEST'),
         ),
-        (("\n".join(("INCLUDE", '"abc/abc"', "/")), None), ("INCLUDE", "abc/abc")),
-        (("\n".join(("INCLUDE", '"abc/abc" /')), None), ("INCLUDE", "abc/abc")),
-        (("\n".join(("INCLUDE", "'abc/abc'", "/")), None), ("INCLUDE", "abc/abc")),
-        (("\n".join(("INCLUDE", "a'abc/abc'", "/")), None), ("INCLUDE", "aabc/abc")),
-        (("\n".join(("INCLUDE", "'abc/abc'a", "/")), None), ("INCLUDE", "abc/abca")),
+        (('\n'.join(('INCLUDE', '"abc/abc"', '/')), None), ('INCLUDE', 'abc/abc')),
+        (('\n'.join(('INCLUDE', '"abc/abc" /')), None), ('INCLUDE', 'abc/abc')),
+        (('\n'.join(('INCLUDE', "'abc/abc'", '/')), None), ('INCLUDE', 'abc/abc')),
+        (('\n'.join(('INCLUDE', "a'abc/abc'", '/')), None), ('INCLUDE', 'aabc/abc')),
+        (('\n'.join(('INCLUDE', "'abc/abc'a", '/')), None), ('INCLUDE', 'abc/abca')),
         (
-            ("\n".join(("START", "01 JUL 1984 /", "/")), None),
-            ("START", (pd.to_datetime("1984-07-01"))),
+            ('\n'.join(('START', '01 JUL 1984 /', '/')), None),
+            ('START', (pd.to_datetime('1984-07-01'))),
         ),
         (
-            ("\n".join(("START", "01 'JUN' 2010 /")), None),
-            ("START", pd.to_datetime("2010-06-01")),
+            ('\n'.join(('START', "01 'JUN' 2010 /")), None),
+            ('START', pd.to_datetime('2010-06-01')),
         ),
     ],
     DataTypes.TABLE_SET: [
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "EQUIL",
-                        "2300 200 2500 0.1 2300 0.001 /",
-                        "2310 205 2520 0.05 2310 0.0 /",
-                        "2305 210 2510 1* 2305 1* /",
+                        'EQUIL',
+                        '2300 200 2500 0.1 2300 0.001 /',
+                        '2310 205 2520 0.05 2310 0.0 /',
+                        '2305 210 2510 1* 2305 1* /',
                     )
                 ),
                 {
-                    "RUNSPEC": [
+                    'RUNSPEC': [
                         (
-                            "EQLDIMS",
+                            'EQLDIMS',
                             pd.DataFrame(
                                 [[3, INT_NAN, INT_NAN, INT_NAN, INT_NAN]],
                                 columns=[
-                                    "EQL_NUM",
-                                    "EQL_NODE_NUM",
-                                    "DEPTH_NODE_MAX_NUM",
-                                    "INIT_TRAC_CONC_NUM",
-                                    "INIT_TRAC_CONC_NODE_NUM",
+                                    'EQL_NUM',
+                                    'EQL_NODE_NUM',
+                                    'DEPTH_NODE_MAX_NUM',
+                                    'INIT_TRAC_CONC_NUM',
+                                    'INIT_TRAC_CONC_NODE_NUM',
                                 ],
                             ),
                         )
@@ -65,7 +74,7 @@ TEST_DATA = {
                 },
             ),
             (
-                "EQUIL",
+                'EQUIL',
                 (
                     pd.DataFrame(
                         [
@@ -83,7 +92,15 @@ TEST_DATA = {
                                 INT_NAN,
                             ],
                         ],
-                        columns=DATA_DIRECTORY["EQUIL"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['EQUIL']
+                                ).specification,
+                            ).columns,
+                        ),
                     ),
                     pd.DataFrame(
                         [
@@ -101,7 +118,15 @@ TEST_DATA = {
                                 INT_NAN,
                             ],
                         ],
-                        columns=DATA_DIRECTORY["EQUIL"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['EQUIL']
+                                ).specification,
+                            ).columns,
+                        ),
                     ),
                     pd.DataFrame(
                         [
@@ -119,33 +144,41 @@ TEST_DATA = {
                                 INT_NAN,
                             ],
                         ],
-                        columns=DATA_DIRECTORY["EQUIL"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['EQUIL']
+                                ).specification,
+                            ).columns,
+                        ),
                     ),
                 ),
             ),
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "EQUIL",
-                        "1450 141 1475 0 638 0 1 1* 10 /",
-                        "1450 141 1475 0 965 0 1 1* 10 /",
-                        "/",
+                        'EQUIL',
+                        '1450 141 1475 0 638 0 1 1* 10 /',
+                        '1450 141 1475 0 965 0 1 1* 10 /',
+                        '/',
                     )
                 ),
                 {
-                    "RUNSPEC": [
+                    'RUNSPEC': [
                         (
-                            "EQLDIMS",
+                            'EQLDIMS',
                             pd.DataFrame(
                                 [[2, INT_NAN, INT_NAN, INT_NAN, INT_NAN]],
                                 columns=[
-                                    "EQL_NUM",
-                                    "EQL_NODE_NUM",
-                                    "DEPTH_NODE_MAX_NUM",
-                                    "INIT_TRAC_CONC_NUM",
-                                    "INIT_TRAC_CONC_NODE_NUM",
+                                    'EQL_NUM',
+                                    'EQL_NODE_NUM',
+                                    'DEPTH_NODE_MAX_NUM',
+                                    'INIT_TRAC_CONC_NUM',
+                                    'INIT_TRAC_CONC_NODE_NUM',
                                 ],
                             ),
                         )
@@ -153,7 +186,7 @@ TEST_DATA = {
                 },
             ),
             (
-                "EQUIL",
+                'EQUIL',
                 (
                     pd.DataFrame(
                         [
@@ -171,7 +204,15 @@ TEST_DATA = {
                                 INT_NAN,
                             ]
                         ],
-                        columns=DATA_DIRECTORY["EQUIL"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['EQUIL']
+                                ).specification,
+                            ).columns,
+                        ),
                     ),
                     pd.DataFrame(
                         [
@@ -189,41 +230,49 @@ TEST_DATA = {
                                 INT_NAN,
                             ]
                         ],
-                        columns=DATA_DIRECTORY["EQUIL"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['EQUIL']
+                                ).specification,
+                            ).columns,
+                        ),
                     ),
                 ),
             ),
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "SWOF",
-                        "0.42 0 0.737 0",
-                        "0.48728 0.000225 0.610213 0",
-                        "0.55456 0.00438 0.310527 0",
-                        "0.62184 0.023012 0.072027 0",
-                        "0.68912 0.069122 0.003178 0",
-                        "0.7564 0.151 0 0",
-                        "0.82368 0.267672 0 0",
-                        "0.89096 0.408671 0 0",
-                        "0.95824 0.557237 0 0",
-                        "1 0.645099 0 0",
-                        "/",
-                        "0 0 1 0",
-                        "0.3 0.002 0.81 0",
-                        "0.4 0.018 0.49 0",
-                        "0.5 0.05 0.25 0",
-                        "0.6 0.098 0.09 0",
-                        "0.7 0.162 0.01 0",
-                        "1 0.2 0 0",
-                        "/",
+                        'SWOF',
+                        '0.42 0 0.737 0',
+                        '0.48728 0.000225 0.610213 0',
+                        '0.55456 0.00438 0.310527 0',
+                        '0.62184 0.023012 0.072027 0',
+                        '0.68912 0.069122 0.003178 0',
+                        '0.7564 0.151 0 0',
+                        '0.82368 0.267672 0 0',
+                        '0.89096 0.408671 0 0',
+                        '0.95824 0.557237 0 0',
+                        '1 0.645099 0 0',
+                        '/',
+                        '0 0 1 0',
+                        '0.3 0.002 0.81 0',
+                        '0.4 0.018 0.49 0',
+                        '0.5 0.05 0.25 0',
+                        '0.6 0.098 0.09 0',
+                        '0.7 0.162 0.01 0',
+                        '1 0.2 0 0',
+                        '/',
                     )
                 ),
                 None,
             ),
             (
-                "SWOF",
+                'SWOF',
                 (
                     pd.DataFrame(
                         np.array(
@@ -240,10 +289,34 @@ TEST_DATA = {
                                 [1, 0.645099, 0, 0],
                             ]
                         ),
-                        columns=DATA_DIRECTORY["SWOF"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                ).specification,
+                            ).columns,
+                        ),
                     ).set_index(
-                        DATA_DIRECTORY["SWOF"].specification.columns[
-                            DATA_DIRECTORY["SWOF"].specification.domain[0]
+                        cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                ).specification,
+                            ).columns,
+                        )[
+                            cast(
+                                Sequence[int],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                    ).specification,
+                                ).domain,
+                            )[0]
                         ]
                     ),
                     pd.DataFrame(
@@ -258,10 +331,34 @@ TEST_DATA = {
                                 [1, 0.2, 0, 0],
                             ]
                         ),
-                        columns=DATA_DIRECTORY["SWOF"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                ).specification,
+                            ).columns,
+                        ),
                     ).set_index(
-                        DATA_DIRECTORY["SWOF"].specification.columns[
-                            DATA_DIRECTORY["SWOF"].specification.domain[0]
+                        cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                ).specification,
+                            ).columns,
+                        )[
+                            cast(
+                                Sequence[int],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['SWOF']
+                                    ).specification,
+                                ).domain,
+                            )[0]
                         ]
                     ),
                 ),
@@ -269,33 +366,33 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "PVTO",
-                        "1 5 1.031 5.81 /",
-                        "12.33 52 1.080 5.03 /",
-                        "21.65 73 1.1021 4.23",
-                        "\t204 1.092 4.62",
-                        "\t321 1.016 6.02 /",
-                        "/",
-                        "1 5 1.0002 3.58 /",
-                        "14.87 58 1.086 2.93 /",
-                        "27.7 90 1.113 2.25",
-                        "\t234 1.1 2.88",
-                        "\t387 1.121 3.96 /",
-                        "/",
-                        "1 5 1.0002 3.58 /",
-                        "18.67 57 1.0730 2.89 /",
-                        "31.65 88 1.1083 2.2",
-                        "\t248 1.093 2.57",
-                        "\t334 1.073 4.23 /",
-                        "/",
+                        'PVTO',
+                        '1 5 1.031 5.81 /',
+                        '12.33 52 1.080 5.03 /',
+                        '21.65 73 1.1021 4.23',
+                        '\t204 1.092 4.62',
+                        '\t321 1.016 6.02 /',
+                        '/',
+                        '1 5 1.0002 3.58 /',
+                        '14.87 58 1.086 2.93 /',
+                        '27.7 90 1.113 2.25',
+                        '\t234 1.1 2.88',
+                        '\t387 1.121 3.96 /',
+                        '/',
+                        '1 5 1.0002 3.58 /',
+                        '18.67 57 1.0730 2.89 /',
+                        '31.65 88 1.1083 2.2',
+                        '\t248 1.093 2.57',
+                        '\t334 1.073 4.23 /',
+                        '/',
                     )
                 ),
                 None,
             ),
             (
-                "PVTO",
+                'PVTO',
                 (
                     pd.DataFrame(
                         np.array(
@@ -307,11 +404,35 @@ TEST_DATA = {
                                 [21.65, 321, 1.016, 6.02],
                             ]
                         ),
-                        columns=DATA_DIRECTORY["PVTO"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                ).specification,
+                            ).columns,
+                        ),
                     ).set_index(
                         [
-                            DATA_DIRECTORY["PVTO"].specification.columns[i]
-                            for i in DATA_DIRECTORY["PVTO"].specification.domain
+                            cast(
+                                list[str],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).columns,
+                            )[i]
+                            for i in cast(
+                                Sequence[int],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).domain,
+                            )
                         ]
                     ),
                     pd.DataFrame(
@@ -324,11 +445,35 @@ TEST_DATA = {
                                 [27.7, 387, 1.121, 3.96],
                             ]
                         ),
-                        columns=DATA_DIRECTORY["PVTO"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                ).specification,
+                            ).columns,
+                        ),
                     ).set_index(
                         [
-                            DATA_DIRECTORY["PVTO"].specification.columns[i]
-                            for i in DATA_DIRECTORY["PVTO"].specification.domain
+                            cast(
+                                list[str],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).columns,
+                            )[i]
+                            for i in cast(
+                                Sequence[int],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).domain,
+                            )
                         ]
                     ),
                     pd.DataFrame(
@@ -341,11 +486,35 @@ TEST_DATA = {
                                 [31.65, 334, 1.073, 4.23],
                             ]
                         ),
-                        columns=DATA_DIRECTORY["PVTO"].specification.columns,
+                        columns=cast(
+                            list[str],
+                            cast(
+                                TableSpecification,
+                                cast(
+                                    KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                ).specification,
+                            ).columns,
+                        ),
                     ).set_index(
                         [
-                            DATA_DIRECTORY["PVTO"].specification.columns[i]
-                            for i in DATA_DIRECTORY["PVTO"].specification.domain
+                            cast(
+                                list[str],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).columns,
+                            )[i]
+                            for i in cast(
+                                Sequence[int],
+                                cast(
+                                    TableSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['PVTO']
+                                    ).specification,
+                                ).domain,
+                            )
                         ]
                     ),
                 ),
@@ -353,19 +522,19 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "GPTABLEN",
-                        "1 8 8",
-                        "0.2\t0.00\t0.00\t0.00\t0.00061\t0.05\t0.1\t1.0\t1.0",
-                        "\t0.02\t0.03\t0.01\t0.0520\t0.02\t0.01\t0.0\t0.0",
-                        "/",
+                        'GPTABLEN',
+                        '1 8 8',
+                        '0.2\t0.00\t0.00\t0.00\t0.00061\t0.05\t0.1\t1.0\t1.0',
+                        '\t0.02\t0.03\t0.01\t0.0520\t0.02\t0.01\t0.0\t0.0',
+                        '/',
                     )
                 ),
-                {"RUNSPEC": [("COMPS", pd.DataFrame([[8]], columns=["N"]))]},
+                {'RUNSPEC': [('COMPS', pd.DataFrame([[8]], columns=['N']))]},
             ),
             (
-                "GPTABLEN",
+                'GPTABLEN',
                 (
                     (
                         pd.DataFrame(
@@ -391,14 +560,14 @@ TEST_DATA = {
                                 ]
                             ],
                             columns=(
-                                ["C_HEAVY"]
-                                + [f"OIL_RECOVERY_FRACTION{i}" for i in range(1, 9)]
-                                + [f"NGL_RECOVERY_FRACTION{i}" for i in range(1, 9)]
+                                ['C_HEAVY']
+                                + [f'OIL_RECOVERY_FRACTION{i}' for i in range(1, 9)]
+                                + [f'NGL_RECOVERY_FRACTION{i}' for i in range(1, 9)]
                             ),
-                        ).set_index(["C_HEAVY"]),
+                        ).set_index(['C_HEAVY']),
                         pd.DataFrame(
                             [[1, 8, 8]],
-                            columns=["GPTABLE_NUM", "HEAVY_C1", "HEAVY_CLAST"],
+                            columns=['GPTABLE_NUM', 'HEAVY_C1', 'HEAVY_CLAST'],
                         ),
                     ),
                 ),
@@ -406,21 +575,21 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "GPTABLEN",
-                        "1 2*",
-                        "0.0  0.0   0.0   0.0    0.0002   0.0516  0.1886   0.2747  0.9801  0.9991  1.00   1.00  1.00  6*1.00",
-                        "0.0   0.0   0.0    0.0075   0.9437  0.8114   0.7253  0.0199  0.0009  0.00   0.00  0.00  6*0.00",
-                        "1.0  0.0   0.0   0.0    0.0002   0.0516  0.1886   0.2747  0.9801  0.9991  1.00   1.00  1.00  6*1.00",
-                        "0.0   0.0   0.0    0.0075   0.9437  0.8114   0.7253  0.0199  0.0009  0.00   0.00  0.00  6*0.00",
-                        "/",
+                        'GPTABLEN',
+                        '1 2*',
+                        '0.0  0.0   0.0   0.0    0.0002   0.0516  0.1886   0.2747  0.9801  0.9991  1.00   1.00  1.00  6*1.00',
+                        '0.0   0.0   0.0    0.0075   0.9437  0.8114   0.7253  0.0199  0.0009  0.00   0.00  0.00  6*0.00',
+                        '1.0  0.0   0.0   0.0    0.0002   0.0516  0.1886   0.2747  0.9801  0.9991  1.00   1.00  1.00  6*1.00',
+                        '0.0   0.0   0.0    0.0075   0.9437  0.8114   0.7253  0.0199  0.0009  0.00   0.00  0.00  6*0.00',
+                        '/',
                     )
                 ),
-                {"RUNSPEC": [("COMPS", pd.DataFrame([[18]], columns=["N"]))]},
+                {'RUNSPEC': [('COMPS', pd.DataFrame([[18]], columns=['N']))]},
             ),
             (
-                "GPTABLEN",
+                'GPTABLEN',
                 (
                     (
                         pd.DataFrame(
@@ -505,14 +674,14 @@ TEST_DATA = {
                                 ],
                             ],
                             columns=(
-                                ["C_HEAVY"]
-                                + [f"OIL_RECOVERY_FRACTION{i}" for i in range(1, 19)]
-                                + [f"NGL_RECOVERY_FRACTION{i}" for i in range(1, 19)]
+                                ['C_HEAVY']
+                                + [f'OIL_RECOVERY_FRACTION{i}' for i in range(1, 19)]
+                                + [f'NGL_RECOVERY_FRACTION{i}' for i in range(1, 19)]
                             ),
-                        ).set_index(["C_HEAVY"]),
+                        ).set_index(['C_HEAVY']),
                         pd.DataFrame(
                             [[1, INT_NAN, INT_NAN]],
-                            columns=["GPTABLE_NUM", "HEAVY_C1", "HEAVY_CLAST"],
+                            columns=['GPTABLE_NUM', 'HEAVY_C1', 'HEAVY_CLAST'],
                         ),
                     ),
                 ),
@@ -520,31 +689,31 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "OILVISCC",
-                        "ASTM FORMULA",
-                        "0.4 0.5 0.6",
-                        "12 18 20",
-                        "11 21 24",
-                        "/",
+                        'OILVISCC',
+                        'ASTM FORMULA',
+                        '0.4 0.5 0.6',
+                        '12 18 20',
+                        '11 21 24',
+                        '/',
                     )
                 ),
-                {"PROPS": (("NCOMPS", pd.DataFrame([[3]], columns=["N"])),)},
+                {'PROPS': (('NCOMPS', pd.DataFrame([[3]], columns=['N'])),)},
             ),
             (
-                "OILVISCC",
+                'OILVISCC',
                 (
                     (
                         pd.DataFrame(
                             [[0.4, 0.5, 0.6, 12.0, 18.0, 20.0, 11.0, 21.0, 24.0]],
                             columns=(
-                                [f"A{i}" for i in range(1, 4)]
-                                + [f"B{i}" for i in range(1, 4)]
-                                + [f"C{i}" for i in range(1, 4)]
+                                [f'A{i}' for i in range(1, 4)]
+                                + [f'B{i}' for i in range(1, 4)]
+                                + [f'C{i}' for i in range(1, 4)]
                             ),
                         ),
-                        pd.DataFrame([["ASTM", "FORMULA"]], columns=["NAME", "TYPE"]),
+                        pd.DataFrame([['ASTM', 'FORMULA']], columns=['NAME', 'TYPE']),
                     ),
                 ),
             ),
@@ -552,207 +721,238 @@ TEST_DATA = {
     ],
     DataTypes.SINGLE_STATEMENT: [
         (
-            ("\n".join(("TABDIMS", "2 4 2* 3", "/")), None),
+            ('\n'.join(('TABDIMS', '2 4 2* 3', '/')), None),
             (
-                "TABDIMS",
+                'TABDIMS',
                 pd.DataFrame(
                     np.array([[2, 4] + 2 * [INT_NAN] + [3] + 11 * [INT_NAN]]),
-                    columns=DATA_DIRECTORY["TABDIMS"].specification.columns,
+                    columns=cast(
+                        list[str],
+                        cast(
+                            StatementSpecification,
+                            cast(
+                                KeywordSpecification, DATA_DIRECTORY['TABDIMS']
+                            ).specification,
+                        ).columns,
+                    ),
                 ),
             ),
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "TABDIMS",
-                        "2 4 2* 3/",
+                        'TABDIMS',
+                        '2 4 2* 3/',
                     )
                 ),
                 None,
             ),
             (
-                "TABDIMS",
+                'TABDIMS',
                 pd.DataFrame(
                     np.array([[2, 4] + 2 * [INT_NAN] + [3] + 11 * [INT_NAN]]),
-                    columns=DATA_DIRECTORY["TABDIMS"].specification.columns,
+                    columns=cast(
+                        list[str],
+                        cast(
+                            StatementSpecification,
+                            cast(
+                                KeywordSpecification, DATA_DIRECTORY['TABDIMS']
+                            ).specification,
+                        ).columns,
+                    ),
                 ),
             ),
         ),
         (
-            ("\n".join(("ENDSCALE", "/")), None),
+            ('\n'.join(('ENDSCALE', '/')), None),
             (
-                "ENDSCALE",
+                'ENDSCALE',
                 pd.DataFrame(
                     [[None] * 2 + [INT_NAN] * 3 + [None]],
-                    columns=DATA_DIRECTORY["ENDSCALE"].specification.columns,
+                    columns=cast(
+                        list[str],
+                        cast(
+                            StatementSpecification,
+                            cast(
+                                KeywordSpecification, DATA_DIRECTORY['ENDSCALE']
+                            ).specification,
+                        ).columns,
+                    ),
                 ),
             ),
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "TABDIMS",
-                        "2 4 2* 3",
+                        'TABDIMS',
+                        '2 4 2* 3',
                     )
                 ),
                 None,
             ),
             ValueError(),
         ),
-        (("\n".join(("TABDIMS", "2 4 2* 3", "abc")), None), ValueError()),
+        (('\n'.join(('TABDIMS', '2 4 2* 3', 'abc')), None), ValueError()),
     ],
     DataTypes.PARAMETERS: [
         (
-            ("\n".join(("RPTSOL", "RESTART=2 /abc")), None),
+            ('\n'.join(('RPTSOL', 'RESTART=2 /abc')), None),
             (
-                "RPTSOL",
+                'RPTSOL',
                 {
-                    "RESTART": "2",
+                    'RESTART': '2',
                 },
             ),
         ),
         (
-            ("\n".join(("RPTSOL", "RESTART=2", "/abc")), None),
+            ('\n'.join(('RPTSOL', 'RESTART=2', '/abc')), None),
             (
-                "RPTSOL",
+                'RPTSOL',
                 {
-                    "RESTART": "2",
+                    'RESTART': '2',
                 },
             ),
         ),
         (
-            ("\n".join(("RPTSCHED", "FIP WELSPECS WELLS /", "abc")), None),
+            ('\n'.join(('RPTSCHED', 'FIP WELSPECS WELLS /', 'abc')), None),
             (
-                "RPTSCHED",
+                'RPTSCHED',
                 {
-                    "FIP": None,
-                    "WELSPECS": None,
-                    "WELLS": None,
+                    'FIP': None,
+                    'WELSPECS': None,
+                    'WELLS': None,
                 },
             ),
         ),
         (
-            ("\n".join(("RPTSCHED", "FIP", "WELSPECS", "WELLS", "/", "abc")), None),
+            ('\n'.join(('RPTSCHED', 'FIP', 'WELSPECS', 'WELLS', '/', 'abc')), None),
             (
-                "RPTSCHED",
+                'RPTSCHED',
                 {
-                    "FIP": None,
-                    "WELSPECS": None,
-                    "WELLS": None,
+                    'FIP': None,
+                    'WELSPECS': None,
+                    'WELLS': None,
                 },
             ),
         ),
         (
-            ("\n".join(("REPORTSCREEN", "WELL LOW", "ITERS MEDIUM", "/")), None),
+            ('\n'.join(('REPORTSCREEN', 'WELL LOW', 'ITERS MEDIUM', '/')), None),
             (
-                "REPORTSCREEN",
+                'REPORTSCREEN',
                 {
-                    "WELL": "LOW",
-                    "ITERS": "MEDIUM",
+                    'WELL': 'LOW',
+                    'ITERS': 'MEDIUM',
                 },
             ),
         ),
         (
-            ("\n".join(("REPORTSCREEN", "WELL LOW abc", "ITERS MEDIUM", "/")), None),
+            ('\n'.join(('REPORTSCREEN', 'WELL LOW abc', 'ITERS MEDIUM', '/')), None),
             ValueError(),
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "RPTSCHED",
+                        'RPTSCHED',
                         "'WELLS=2' 'SUMMARY=2' 'fip=3' 'RESTART=1' 'WELSPECS' 'CPU=2' /",
                     )
                 ),
                 None,
             ),
             (
-                "RPTSCHED",
+                'RPTSCHED',
                 {
-                    "WELLS": "2",
-                    "SUMMARY": "2",
-                    "fip": "3",
-                    "RESTART": "1",
-                    "WELSPECS": None,
-                    "CPU": "2",
+                    'WELLS': '2',
+                    'SUMMARY': '2',
+                    'fip': '3',
+                    'RESTART': '1',
+                    'WELSPECS': None,
+                    'CPU': '2',
                 },
             ),
         ),
     ],
     DataTypes.ARRAY: [
         (
-            ("\n".join(("ACTNUM", "3*0 2*1", "5*0", "/")), None),
-            ("ACTNUM", np.array([False] * 3 + [True] * 2 + [False] * 5)),
+            ('\n'.join(('ACTNUM', '3*0 2*1', '5*0', '/')), None),
+            ('ACTNUM', np.array([False] * 3 + [True] * 2 + [False] * 5)),
         ),
         (
-            ("\n".join(("PERMX", "3*0 2*1", "5*0.5 6", "/")), None),
-            ("PERMX", np.array([0] * 3 + [1] * 2 + [0.5] * 5 + [6])),
+            ('\n'.join(('PERMX', '3*0 2*1', '5*0.5 6', '/')), None),
+            ('PERMX', np.array([0] * 3 + [1] * 2 + [0.5] * 5 + [6])),
         ),
     ],
     DataTypes.OBJECT_LIST: [
         (
-            ("\n".join(("WOPR", "'PROD1'", "PROD2", "/")), None),
+            ('\n'.join(('WOPR', "'PROD1'", 'PROD2', '/')), None),
             (
-                "WOPR",
-                ["PROD1", "PROD2"],
+                'WOPR',
+                ['PROD1', 'PROD2'],
             ),
         ),
         (
             (
-                "\n".join(("WOPR", "'PROD1'", "PROD2/", "")),
+                '\n'.join(('WOPR', "'PROD1'", 'PROD2/', '')),
                 None,
             ),
             (
-                "WOPR",
-                ["PROD1", "PROD2"],
+                'WOPR',
+                ['PROD1', 'PROD2'],
             ),
         ),
         (
-            ("\n".join(("WOPR", "'PROD1'", "PROD2", "")), None),
+            ('\n'.join(('WOPR', "'PROD1'", 'PROD2', '')), None),
             ValueError(),
         ),
         (
             (
-                "\n".join(("WOPR", "'PROD1'", "", "PROD2", "/")),
+                '\n'.join(('WOPR', "'PROD1'", '', 'PROD2', '/')),
                 None,
             ),
             ValueError(),
         ),
         (
-            ("\n".join(("DATES", "01 JUL 2011/", "01 AUG 2012/", "/")), None),
-            ("DATES", [pd.to_datetime("2011-07-01"), pd.to_datetime("2012-08-01")]),
+            ('\n'.join(('DATES', '01 JUL 2011/', '01 AUG 2012/', '/')), None),
+            ('DATES', [pd.to_datetime('2011-07-01'), pd.to_datetime('2012-08-01')]),
         ),
         (
-            ("\n".join(("DATES", "01 JUL 2011/", "01 AUG 2012", "/")), None),
+            ('\n'.join(('DATES', '01 JUL 2011/', '01 AUG 2012', '/')), None),
             ValueError(),
         ),
     ],
     DataTypes.RECORDS: [
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "TUNING",
-                        "1 365 0.1 0.15 3 0.3 0.1 1.25 0.75 /",
-                        "0.1 0.001 1E-7 0.0001",
-                        "10 0.01 1E-6 0.001 0.001 /",
-                        "12 1 25 1 8 8 4*1E6 /",
+                        'TUNING',
+                        '1 365 0.1 0.15 3 0.3 0.1 1.25 0.75 /',
+                        '0.1 0.001 1E-7 0.0001',
+                        '10 0.01 1E-6 0.001 0.001 /',
+                        '12 1 25 1 8 8 4*1E6 /',
                     )
                 ),
                 None,
             ),
             (
-                "TUNING",
+                'TUNING',
                 (
                     pd.DataFrame(
                         {
                             key: value
                             for key, value in zip(
-                                DATA_DIRECTORY["TUNING"]
-                                .specification.specifications[0]
-                                .columns,
+                                cast(
+                                    list[StatementSpecification],
+                                    cast(
+                                        RecordsSpecification,
+                                        cast(
+                                            KeywordSpecification,
+                                            DATA_DIRECTORY['TUNING'],
+                                        ).specification,
+                                    ).specifications,
+                                )[0].columns,
                                 [
                                     1.0,
                                     365.0,
@@ -773,9 +973,16 @@ TEST_DATA = {
                         {
                             key: value
                             for key, value in zip(
-                                DATA_DIRECTORY["TUNING"]
-                                .specification.specifications[1]
-                                .columns,
+                                cast(
+                                    list[StatementSpecification],
+                                    cast(
+                                        RecordsSpecification,
+                                        cast(
+                                            KeywordSpecification,
+                                            DATA_DIRECTORY['TUNING'],
+                                        ).specification,
+                                    ).specifications,
+                                )[1].columns,
                                 [
                                     0.1,
                                     0.001,
@@ -797,9 +1004,16 @@ TEST_DATA = {
                         {
                             key: value
                             for key, value in zip(
-                                DATA_DIRECTORY["TUNING"]
-                                .specification.specifications[2]
-                                .columns,
+                                cast(
+                                    list[StatementSpecification],
+                                    cast(
+                                        RecordsSpecification,
+                                        cast(
+                                            KeywordSpecification,
+                                            DATA_DIRECTORY['TUNING'],
+                                        ).specification,
+                                    ).specifications,
+                                )[2].columns,
                                 [12, 1, 25, 1, 8, 8] + [1e6] * 4,
                             )
                         },
@@ -810,12 +1024,12 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "TUNING",
-                        "1 365 0.1 0.15 3 0.3 0.1 1.25 0.75 /",
-                        "0.1 0.001 1E-7 0.0001",
-                        "10 0.01 1E-6 0.001 0.001 /",
+                        'TUNING',
+                        '1 365 0.1 0.15 3 0.3 0.1 1.25 0.75 /',
+                        '0.1 0.001 1E-7 0.0001',
+                        '10 0.01 1E-6 0.001 0.001 /',
                     )
                 ),
                 None,
@@ -824,58 +1038,58 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "VFPPROD",
+                        'VFPPROD',
                         "1 2200 'OIL' 'WCT' 'GOR' 'THP' ' ' 'METRIC' 'BHP' /",
-                        "1 30 300 /",
-                        "10 20 /",
-                        "0 0.7 /",
-                        "1 100 500 /",
-                        "0 /",
-                        "1 1 1 1 1.75243E+002 1.75243E+002 1.75244E+002 /",
-                        "2 1 1 1 1.80749E+002 1.80749E+002 1.80750E+002 /",
-                        "1 2 1 1 1.91358E+002 1.91359E+002 1.91362E+002 /",
-                        "2 2 1 1 1.96743E+002 1.96744E+002 1.96747E+002 /",
-                        "1 1 2 1 1.71599E+002 1.71599E+002 1.71601E+002 /",
-                        "2 1 2 1 1.77093E+002 1.77093E+002 1.77095E+002 /",
-                        "1 2 2 1 1.88482E+002 1.88483E+002 1.88487E+002 /",
-                        "2 2 2 1 1.93865E+002 1.93866E+002 1.93869E+002 /",
-                        "1 1 3 1 1.45582E+002 1.45526E+002 1.45462E+002 /",
-                        "2 1 3 1 1.50977E+002 1.50978E+002 1.50979E+002 /",
-                        "1 2 3 1 1.71277E+002 1.71278E+002 1.71282E+002 /",
-                        "2 2 3 1 1.71277E+002 1.71278E+002 1.71282E+002 /",
+                        '1 30 300 /',
+                        '10 20 /',
+                        '0 0.7 /',
+                        '1 100 500 /',
+                        '0 /',
+                        '1 1 1 1 1.75243E+002 1.75243E+002 1.75244E+002 /',
+                        '2 1 1 1 1.80749E+002 1.80749E+002 1.80750E+002 /',
+                        '1 2 1 1 1.91358E+002 1.91359E+002 1.91362E+002 /',
+                        '2 2 1 1 1.96743E+002 1.96744E+002 1.96747E+002 /',
+                        '1 1 2 1 1.71599E+002 1.71599E+002 1.71601E+002 /',
+                        '2 1 2 1 1.77093E+002 1.77093E+002 1.77095E+002 /',
+                        '1 2 2 1 1.88482E+002 1.88483E+002 1.88487E+002 /',
+                        '2 2 2 1 1.93865E+002 1.93866E+002 1.93869E+002 /',
+                        '1 1 3 1 1.45582E+002 1.45526E+002 1.45462E+002 /',
+                        '2 1 3 1 1.50977E+002 1.50978E+002 1.50979E+002 /',
+                        '1 2 3 1 1.71277E+002 1.71278E+002 1.71282E+002 /',
+                        '2 2 3 1 1.71277E+002 1.71278E+002 1.71282E+002 /',
                     )
                 ),
                 None,
             ),
             (
-                "VFPPROD",
+                'VFPPROD',
                 (
                     pd.DataFrame(
                         [
                             [
                                 1,
                                 2200.0,
-                                "OIL",
-                                "WCT",
-                                "GOR",
-                                "THP",
-                                " ",
-                                "METRIC",
-                                "BHP",
+                                'OIL',
+                                'WCT',
+                                'GOR',
+                                'THP',
+                                ' ',
+                                'METRIC',
+                                'BHP',
                             ]
                         ],
                         columns=[
-                            "TABLE_NUM",
-                            "BH_DATUM_DEPTH",
-                            "FLO",
-                            "WFR",
-                            "GFR",
-                            "THP",
-                            "ALQ",
-                            "UNITS",
-                            "QUANTITY",
+                            'TABLE_NUM',
+                            'BH_DATUM_DEPTH',
+                            'FLO',
+                            'WFR',
+                            'GFR',
+                            'THP',
+                            'ALQ',
+                            'UNITS',
+                            'QUANTITY',
                         ],
                     ),
                     np.array([1, 30, 300]),
@@ -886,145 +1100,145 @@ TEST_DATA = {
                     pd.DataFrame(
                         [[1, 1, 1, 1, 1.75243e2, 1.75243e2, 1.75244e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 1, 1, 1, 1.80749e2, 1.80749e2, 1.80750e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[1, 2, 1, 1, 1.91358e2, 1.91359e2, 1.91362e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 2, 1, 1, 1.96743e2, 1.96744e2, 1.96747e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[1, 1, 2, 1, 1.71599e2, 1.71599e2, 1.71601e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 1, 2, 1, 1.77093e2, 1.77093e2, 1.77095e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[1, 2, 2, 1, 1.88482e2, 1.88483e2, 1.88487e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 2, 2, 1, 1.93865e2, 1.93866e2, 1.93869e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[1, 1, 3, 1, 1.45582e2, 1.45526e2, 1.45462e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 1, 3, 1, 1.50977e2, 1.50978e2, 1.50979e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[1, 2, 3, 1, 1.71277e2, 1.71278e2, 1.71282e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                     pd.DataFrame(
                         [[2, 2, 3, 1, 1.71277e2, 1.71278e2, 1.71282e2]],
                         columns=[
-                            "NT",
-                            "NW",
-                            "NG",
-                            "NA",
-                            "BHP_THT1",
-                            "BHP_THT2",
-                            "BHP_THT3",
+                            'NT',
+                            'NW',
+                            'NG',
+                            'NA',
+                            'BHP_THT1',
+                            'BHP_THT2',
+                            'BHP_THT3',
                         ],
                     ),
                 ),
@@ -1034,27 +1248,35 @@ TEST_DATA = {
     DataTypes.STATEMENT_LIST: [
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "WCONPROD",
-                        "1043 OPEN LRAT 18.19 0 0 18.99 2* /",
-                        "1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /",
-                        "/",
+                        'WCONPROD',
+                        '1043 OPEN LRAT 18.19 0 0 18.99 2* /',
+                        '1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /',
+                        '/',
                     )
                 ),
                 None,
             ),
             (
-                "WCONPROD",
+                'WCONPROD',
                 pd.DataFrame(
                     {
                         key: (value, value2)
                         for key, value, value2 in zip(
-                            DATA_DIRECTORY["WCONPROD"].specification.columns,
+                            cast(
+                                list[str],
+                                cast(
+                                    StatementSpecification,
+                                    cast(
+                                        KeywordSpecification, DATA_DIRECTORY['WCONPROD']
+                                    ).specification,
+                                ).columns,
+                            ),
                             [
-                                "1043",
-                                "OPEN",
-                                "LRAT",
+                                '1043',
+                                'OPEN',
+                                'LRAT',
                                 18.19,
                                 0.0,
                                 0.0,
@@ -1066,9 +1288,9 @@ TEST_DATA = {
                             ]
                             + [np.nan] * 9,
                             [
-                                "1054",
-                                "OPEN",
-                                "ORAT",
+                                '1054',
+                                'OPEN',
+                                'ORAT',
                                 16.38,
                                 1.765,
                                 0.0,
@@ -1086,11 +1308,11 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "WCONPROD",
-                        "1043 OPEN LRAT 18.19 0 0 18.99 2* /",
-                        "1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /",
+                        'WCONPROD',
+                        '1043 OPEN LRAT 18.19 0 0 18.99 2* /',
+                        '1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /',
                     )
                 ),
                 None,
@@ -1099,12 +1321,12 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "WCONPROD",
-                        "1043 OPEN LRAT 18.19 0 0 18.99 2* /",
-                        "1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /",
-                        "",
+                        'WCONPROD',
+                        '1043 OPEN LRAT 18.19 0 0 18.99 2* /',
+                        '1054 OPEN ORAT 16.38 1.765 0 18.14 1* 50 /',
+                        '',
                     )
                 ),
                 None,
@@ -1113,42 +1335,50 @@ TEST_DATA = {
         ),
         (
             (
-                "\n".join(
+                '\n'.join(
                     (
-                        "WELSPECS",
+                        'WELSPECS',
                         "'3' 'GROUP 1' 22 20 1* 'OIL' 1* 1* 1* 1* 1* 1* 1* 1* 1* 1* 1* /",
-                        "/",
+                        '/',
                     )
                 ),
                 None,
             ),
             (
-                "WELSPECS",
+                'WELSPECS',
                 pd.DataFrame(
                     [
-                        ["3", "GROUP 1", 22, 20, np.nan, "OIL", np.nan]
+                        ['3', 'GROUP 1', 22, 20, np.nan, 'OIL', np.nan]
                         + [None] * 3
                         + [INT_NAN]
                         + [None] * 2
                     ],
-                    columns=DATA_DIRECTORY["WELSPECS"].specification.columns,
+                    columns=cast(
+                        list[str],
+                        cast(
+                            StatementSpecification,
+                            cast(
+                                KeywordSpecification, DATA_DIRECTORY['WELSPECS']
+                            ).specification,
+                        ).columns,
+                    ),
                 ),
             ),
         ),
         (
-            ("\n".join(("WECON", "P*    2*  0.9 2*  WELL/", "/")), None),
+            ('\n'.join(('WECON', 'P*    2*  0.9 2*  WELL/', '/')), None),
             (
-                "WECON",
+                'WECON',
                 pd.DataFrame(
                     [
                         [
-                            "P*",
+                            'P*',
                             np.nan,
                             np.nan,
                             0.9,
                             np.nan,
                             np.nan,
-                            "WELL",
+                            'WELL',
                             None,
                             None,
                             None,
@@ -1158,43 +1388,55 @@ TEST_DATA = {
                             np.nan,
                         ]
                     ],
-                    columns=DATA_DIRECTORY["WECON"].specification.columns,
+                    columns=cast(
+                        list[str],
+                        cast(
+                            StatementSpecification,
+                            cast(
+                                KeywordSpecification, DATA_DIRECTORY['WECON']
+                            ).specification,
+                        ).columns,
+                    ),
                 ),
             ),
         ),
     ],
     DataTypes.ARRAY_WITH_UNITS: [
         (
-            ("\n".join(("RPTRSTT", "MONTH", "2 3 4", "/")), None),
-            ("RPTRSTT", ArrayWithUnits("MONTH", np.array([2.0, 3.0, 4.0]))),
+            ('\n'.join(('RPTRSTT', 'MONTH', '2 3 4', '/')), None),
+            ('RPTRSTT', ArrayWithUnits('MONTH', np.array([2.0, 3.0, 4.0]))),
         )
     ],
     None: [
         (
-            ("\n".join(("RPTRSTL", "/")), None),
-            ("RPTRSTL", None),
+            ('\n'.join(('RPTRSTL', '/')), None),
+            ('RPTRSTL', None),
         ),
-        (("\n".join(("RPTRSTL", "abc")), None), ValueError()),
+        (('\n'.join(('RPTRSTL', 'abc')), None), ValueError()),
     ],
 }
 
 
 @pytest.mark.parametrize(
-    "data_type, input, expected",
+    'data_type, input, expected',
     itertools.chain(
         *([(key, val, exp) for (val, exp) in data] for (key, data) in TEST_DATA.items())
     ),
 )
-def test_load(data_type, input, expected):
+def test_load(
+    data_type: DataTypes | None,
+    input: tuple[str, DataType | None],
+    expected: tuple[str, ValueType] | ValueError,
+):
     class IterPrev:
-        def __init__(self, buf):
-            self._buf = buf
-            self._last = None
+        def __init__(self, buf: Iterator[str]):
+            self._buf: Iterator[str] = buf
+            self._last: str | None = None
 
         def __iter__(self):
             return self
 
-        def __next__(self):
+        def __next__(self) -> str:
             self._last = next(self._buf)
             return self._last
 
@@ -1203,10 +1445,9 @@ def test_load(data_type, input, expected):
                 self._buf = itertools.chain((self._last,), self._buf)
                 self._last = None
             else:
-                raise ValueError("Can not get previous line.")
+                raise ValueError('Can not get previous line.')
+            return self
 
-    # if isinstance(input, tuple | list):
-    #     inp_text, specification = input
     inp_text, data = input
 
     buf = iter(inp_text.splitlines())
@@ -1216,10 +1457,12 @@ def test_load(data_type, input, expected):
     keyword = next(buf)
     specification = DATA_DIRECTORY[keyword]
     if specification is None:
+        if data is None:
+            raise ValueError()
         specification = get_dynamic_keyword_specification(keyword, data)
     if isinstance(expected, Exception):
         with pytest.raises(type(expected)):
-            LOADERS[data_type](specification.specification, buf, data)
+            _ = LOADERS[data_type](specification.specification, buf, data)
     else:
         res = LOADERS[data_type](specification.specification, buf, data)
         if not isinstance(expected[1], tuple | list | ArrayWithUnits):
@@ -1227,12 +1470,30 @@ def test_load(data_type, input, expected):
             res = [res]
         else:
             expected_res = expected[1]
+        res = cast(
+            Sequence[
+                np.ndarray
+                | pd.DataFrame
+                | str
+                | pd.Timestamp
+                | Sequence[np.ndarray | pd.DataFrame | str | pd.Timestamp]
+            ],
+            res,
+        )
         for r, e in zip(res, expected_res):
             _test_val(r, e)
 
 
-def _test_val(r, e):
+def _test_val(
+    r: np.ndarray
+    | pd.DataFrame
+    | str
+    | pd.Timestamp
+    | Sequence[np.ndarray | pd.DataFrame | str | pd.Timestamp],
+    e: ValueType,
+):
     if isinstance(r, tuple | list):
+        assert isinstance(e, tuple | list)
         assert len(r) == len(e)
         for _r, _e in zip(r, e):
             _test_val(_r, _e)
@@ -1240,37 +1501,45 @@ def _test_val(r, e):
     if isinstance(e, np.ndarray):
         np.testing.assert_equal(r, e)
     elif isinstance(e, pd.DataFrame):
+        assert isinstance(r, pd.DataFrame)
         pd.testing.assert_frame_equal(r, e)
     else:
+        assert not isinstance(r, pd.DataFrame)
         assert r == e
 
 
 DECOMPRESS_TEST_DATA = [
-    (("3*1 2*0 1", bool), np.array([True] * 3 + [False] * 2 + [True])),
-    (("3*1 2*0 1", int), np.array([1] * 3 + [0] * 2 + [1])),
-    (("3*1 2*0 1", float), np.array([1.0] * 3 + [0.0] * 2 + [1.0])),
+    (('3*1 2*0 1', bool), np.array([True] * 3 + [False] * 2 + [True])),
+    (('3*1 2*0 1', int), np.array([1] * 3 + [0] * 2 + [1])),
+    (('3*1 2*0 1', float), np.array([1.0] * 3 + [0.0] * 2 + [1.0])),
 ]
 
 
 @pytest.mark.parametrize(
-    "inp, dtype, expected",
+    'inp, dtype, expected',
     [(inp, dtype, exp) for ((inp, dtype), exp) in DECOMPRESS_TEST_DATA],
 )
-def test_decompress(inp, dtype, expected):
+def test_decompress(
+    inp: str,
+    dtype: type | None,
+    expected: npt.NDArray[np.floating | np.integer | np.bool],
+):
     res = decompress_array(inp, dtype)
     np.testing.assert_equal(res, expected)
 
 
 PARSE_VALS_TEST_DATA = [
     (
-        ([None] * 10, 2, ["1", "2*5", "*", "3*"]),
-        ([None] * 2 + ["1"] + ["5"] * 2 + [None] * 5, 9),
+        ([None] * 10, 2, ['1', '2*5', '*', '3*']),
+        ([None] * 2 + ['1'] + ['5'] * 2 + [None] * 5, 9),
     )
 ]
 
 
-@pytest.mark.parametrize("inp, expected", [value for value in PARSE_VALS_TEST_DATA])
-def test_parse_vals(inp, expected):
+@pytest.mark.parametrize('inp, expected', [value for value in PARSE_VALS_TEST_DATA])
+def test_parse_vals(
+    inp: tuple[list[str | None], int, list[str]], expected: list[None | str]
+):
     full, shift, vals = inp
     exp, exp_shift = expected
     res, res_shift = parse_vals(full, shift, vals)

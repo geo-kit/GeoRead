@@ -11,12 +11,17 @@ requires-python =">=3.11"
 dev = [
     'pytest',
     'ruff',
-    'pandas-stubs'
+    'pandas-stubs',
+    'basedpyright'
     ]
 [tool.ruff]
-[lint]
-select = [
+[tool.ruff.lint]
+extend-select = [
     'D'
 ]
-[format]
+ignore = [
+    'D203',
+    'D212'
+]
+[tool.ruff.format]
 quote-style = 'single'

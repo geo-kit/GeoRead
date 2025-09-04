@@ -1,197 +1,310 @@
+from collections.abc import Callable, Sequence
 from contextlib import ExitStack
 import copy
 import numbers
+import pathlib
+from typing import Any, Protocol
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from .data_directory import (
     INT_NAN,
+    ArraySpecification,
+    ArrayWithUnits,
+    DataType,
     DataTypes,
     DATA_DIRECTORY,
+    IntType,
+    KeywordSpecification,
+    NoDataSpecification,
+    ObjectSpecification,
+    ParametersSpecification,
+    StringSpecification,
+    TableSpecification,
+    ValueType,
     get_dynamic_keyword_specification,
 )
 
 MAX_STRLEN = 40
 
-INPLACE_ARRAYS = ["TSTEP"]
+INPLACE_ARRAYS = ['TSTEP']
 
 
-def format_string_val(val, keyword_spec):
-    if keyword_spec.specification is not None and keyword_spec.specification.date:
-        d = val.strftime("%d %b %Y").upper()
+class PWriteBuf(Protocol):
+    def write(self, s: str, /) -> int | None:
+        pass
+
+
+def format_string_val(
+    val: pd.Timestamp | str,
+    keyword_spec: StringSpecification | None | ObjectSpecification,
+) -> str:
+    if keyword_spec is not None and keyword_spec.date:
+        if not isinstance(val, pd.Timestamp):
+            raise ValueError('`val` should be of type pandas.Timestamp.')
+        d = val.strftime('%d %b %Y').upper()
         if val.hour or val.minute or val.second:
-            t = val.strftime("%H:%M:%S")
-            return " ".join((d, t))
+            t = val.strftime('%H:%M:%S')
+            return ' '.join((d, t))
         return d
+    if not isinstance(val, str):
+        raise ValueError('Value should be of type str.')
     return val
 
 
-def _dump_string(keyword_spec, val, buf):
-    buf.write(
-        "\n".join([keyword_spec.keyword, format_string_val(val, keyword_spec), "/"])
-    )
+def _dump_string(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf):
+    if not (isinstance(val, str) or isinstance(val, pd.Timestamp)):
+        raise ValueError('`val` should be of type `str` or `pandas.Timestamp`.')
+    spec = keyword_spec.specification
+    if not (isinstance(spec, StringSpecification) or spec is None):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type StringSpecification.'
+        )
+    _ = buf.write('\n'.join([keyword_spec.keyword, format_string_val(val, spec), '/']))
 
 
-def dump_keyword(keyword, val, section, buf, include_path):
-    DUMP_ROUTINES[DATA_DIRECTORY[section][keyword]](keyword, val, buf, include_path)
-    buf.write("\n")
-    return buf
-
-
-def _dump_array(keyword_spec, val, buf, include_dir):
+def _dump_array(
+    keyword_spec: KeywordSpecification,
+    val: ValueType,
+    buf: PWriteBuf,
+    include_dir: pathlib.Path | None,
+):
     if keyword_spec.keyword in INPLACE_ARRAYS:
         inplace = True
     else:
         inplace = False
-    if keyword_spec.specification.dtype in (bool, int):
-        fmt = "%d"
+
+    if not isinstance(val, np.ndarray):
+        raise ValueError('`val` should be of type `numpy.ndarray`.')
+
+    spec = keyword_spec.specification
+    if not isinstance(spec, ArraySpecification):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type ArraySpecification.'
+        )
+
+    if spec.dtype in (bool, int):
+        fmt = '%d'
     else:
-        fmt = "%f"
+        fmt = '%f'
     if inplace:
         _dump_array_ascii(buf, val.reshape(-1), header=keyword_spec.keyword, fmt=fmt)
-        buf.write("/")
+        _ = buf.write('/')
         return
-    with open(include_dir / f"{keyword_spec.keyword}.inc", "w") as inc_buf:
+    if include_dir is None:
+        raise ValueError(
+            '`include_dir` should be provided if array is not supposed to be dumped inplace.'
+        )
+
+    with open(include_dir / f'{keyword_spec.keyword}.inc', 'w') as inc_buf:
         _dump_array_ascii(
             inc_buf, val.reshape(-1), fmt=fmt, header=keyword_spec.keyword
         )
-        inc_buf.write("/")
-    buf.write(
-        "\n".join(
+        _ = inc_buf.write('/')
+    _ = buf.write(
+        '\n'.join(
             (
-                "INCLUDE",
-                '"' + "/".join((include_dir.name, f"{keyword_spec.keyword}.inc")) + '"',
+                'INCLUDE',
+                '"' + '/'.join((include_dir.name, f'{keyword_spec.keyword}.inc')) + '"',
             )
         )
     )
-    buf.write("\n/")
+    _ = buf.write('\n/')
 
 
-def _dump_table(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword)
-    domain = keyword_spec.specification.domain
+def _dump_table(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf):
+    if not isinstance(val, Sequence):
+        raise ValueError('`val` should be of type `Sequence[pandas.DataFrame]`')
+
+    _ = buf.write(keyword_spec.keyword)
+    spec = keyword_spec.specification
+    if not isinstance(spec, TableSpecification):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type TableSpecification.'
+        )
+
+    domain = spec.domain
     for table in val:
-        if keyword_spec.specification.header:
+        if spec.header:
+            if not isinstance(table, Sequence):
+                raise ValueError(
+                    '`table` should be of type `Sequence[pandas.DataFrame]`'
+                )
             header = table[1]
             data = table[0]
         else:
             header = None
             data = table
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError('`val` should be of type `Sequence[pandas.DataFrame]`')
+        domain_val = domain
         if header is not None:
-            buf.write("\n")
+            _ = buf.write('\n')
+
+            if not isinstance(header, pd.DataFrame):
+                raise ValueError('`header` should be of type `pandas.DataFrame.`')
             _dump_statement(header, buf, closing_slash=False, new_line=False)
-        if (
-            keyword_spec.specification.domain is not None
-            and len(keyword_spec.specification.domain) == 2
-        ):
+        if domain_val is not None and len(domain_val) == 2:
             _dump_multitable(data, buf)
             continue
-        buf.write("\n")
+        _ = buf.write('\n')
         row_iterator = (
             data.itertuples() if domain is not None else data.itertuples(index=False)
         )
         for row in row_iterator:
             vals = list(row)
-            vals = [nan_to_none(v) for v in vals]
+            vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportAny]
             str_representaions = [
-                _string_representation(v) if v is not None else "" for v in vals
+                _string_representation(v) if v is not None else '' for v in vals
             ]
             str_representaions = _replace_empty_vals(str_representaions)
-            buf.write("\t".join([v for v in str_representaions]) + "\n")
-        buf.write("/")
+            _ = buf.write('\t'.join([v for v in str_representaions]) + '\n')
+        _ = buf.write('/')
 
 
-def _dump_multitable(val, buf):
-    buf.write("\n")
-    for ind0, df in val.groupby(level=0):
+def _dump_multitable(val: pd.DataFrame, buf: PWriteBuf):
+    _ = buf.write('\n')
+    for _, df in val.groupby(level=0):  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
         for i, (ind1, row) in enumerate(df.iterrows()):
-            vals = row.values.tolist()
+            vals = row.values.tolist()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+            if not isinstance(ind1, Sequence):
+                raise ValueError('`val` should have multiindex.')
             if i == 0:
                 vals = [*ind1] + vals
             else:
                 vals = [ind1[1]] + vals
-            vals = [nan_to_none(v) for v in vals]
+            vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportArgumentType]
             str_representations = [
-                _string_representation(v) if v is not None else "" for v in vals
+                _string_representation(v) if v is not None else '' for v in vals
             ]
             str_representations = _replace_empty_vals(str_representations)
             if i != 0:
-                str_representations = [""] + str_representations
+                str_representations = [''] + str_representations
             if i == len(df) - 1:
-                str_representations = str_representations + ["/"]
-            buf.write("\t".join(str_representations) + "\n")
-    buf.write("/")
+                str_representations = str_representations + ['/']
+            _ = buf.write('\t'.join(str_representations) + '\n')
+    _ = buf.write('/')
 
 
-def _dump_single_statement(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
+def _dump_single_statement(
+    keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf
+):
+    _ = buf.write(keyword_spec.keyword + '\n')
+    if not isinstance(val, pd.DataFrame):
+        raise ValueError('`val` should be of type `pandas.DataFrame`.')
     _dump_statement(val, buf, closing_slash=False)
-    buf.write("/")
+    _ = buf.write('/')
 
 
-def _dump_statement_list(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
+def _dump_statement_list(
+    keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf
+):
+    if not isinstance(val, pd.DataFrame):
+        raise ValueError('`val` should be of type `pd.DataFrame`.')
+    _ = buf.write(keyword_spec.keyword + '\n')
     for row in val.itertuples(index=False):
         _dump_statement(row, buf, closing_slash=True)
-    buf.write("/")
+    _ = buf.write('/')
 
 
-def _dump_records(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
+def _dump_records(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf):
+    _ = buf.write(keyword_spec.keyword + '\n')
+    if not isinstance(val, Sequence):
+        raise ValueError('`val` should be of type Sequence[pandas.DataFrame].')
     for v in val:
+        if not isinstance(v, (pd.DataFrame, np.ndarray)):
+            raise ValueError('`val` should be of type Sequence[pandas.DataFrame].')
         _dump_statement(v, buf, closing_slash=True)
 
 
-def _dump_object_list(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
+def _dump_object_list(
+    keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf
+):
+    _ = buf.write(keyword_spec.keyword + '\n')
+    spec = keyword_spec.specification
+    if not (isinstance(spec, ObjectSpecification) or spec is None):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type `ObjectSpecification`.'
+        )
+    if not isinstance(val, Sequence):
+        raise ValueError('`val` should be of type Sequence[str | pd.Timestamp]')
+
     for o in val:
-        buf.write(f"{format_string_val(o, keyword_spec)}")
-        if (
-            keyword_spec.specification is not None
-            and keyword_spec.specification.terminated
-        ):
-            buf.write(" /")
-        buf.write("\n")
-    buf.write("/")
+        if not (isinstance(o, str) or isinstance(o, pd.Timestamp)):
+            raise ValueError('`val` should be of type Sequence[str | pd.Timestamp]')
+        _ = buf.write(f'{format_string_val(o, spec)}')
+        if spec is not None and spec.terminated:
+            _ = buf.write(' /')
+        _ = buf.write('\n')
+    _ = buf.write('/')
 
 
-def dump_parameters(keyword_spec, val, buf):
-    if keyword_spec.specification.tabulated:
+def dump_parameters(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf):
+    spec = keyword_spec.specification
+    if not isinstance(spec, ParametersSpecification):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type ParametersSpecification.'
+        )
+    if not isinstance(val, dict):
+        raise ValueError
+    if spec.tabulated:
         return dump_tabulated_parameters(keyword_spec, val, buf)
 
-    buf.write(keyword_spec.keyword + "\n")
-    res = " ".join([f"{k}" if v is None else f"{k}={v}" for k, v in val.items()])
-    buf.write(res)
-    buf.write("\n/")
+    _ = buf.write(keyword_spec.keyword + '\n')
+    res = ' '.join([f'{k}' if v is None else f'{k}={v}' for k, v in val.items()])
+    _ = buf.write(res)
+    _ = buf.write('\n/')
 
 
-def dump_tabulated_parameters(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
+def dump_tabulated_parameters(
+    keyword_spec: KeywordSpecification, val: dict[str, str | None], buf: PWriteBuf
+):
+    _ = buf.write(keyword_spec.keyword + '\n')
     for key, data in val.items():
-        buf.write("\t".join((key, data)) + "\n")
-    buf.write("/")
+        if not isinstance(data, str):
+            raise ValueError('values of `val` should be strings.')
+        _ = buf.write('\t'.join((key, data)) + '\n')
+    _ = buf.write('/')
 
 
-def _dump_array_with_units(keyword_spec, val, buf):
-    buf.write(keyword_spec.keyword + "\n")
-    buf.write(val.units + "\n")
-    if keyword_spec.specification.dtype in (bool, int):
-        fmt = "%d"
+def _dump_array_with_units(
+    keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf
+):
+    _ = buf.write(keyword_spec.keyword + '\n')
+    if not isinstance(val, ArrayWithUnits):
+        raise ValueError('`val` should be of type `ArrayWithUnits`')
+    _ = buf.write(val.units + '\n')
+    spec = keyword_spec.specification
+    if not isinstance(spec, ArraySpecification):
+        raise ValueError(
+            '`keyword_spec.specification` should be of type `ArraySpecification`.'
+        )
+    if spec.dtype in (bool, int):
+        fmt = '%d'
     else:
-        fmt = "%g"
+        fmt = '%g'
     _dump_array_ascii(buf, val.data.reshape(-1), fmt=fmt)
-    buf.write("/")
+    _ = buf.write('/')
 
 
 def _dump_no_data(
-    keyword_spec,
-    buf,
+    keyword_spec: KeywordSpecification,
+    buf: PWriteBuf,
 ):
-    buf.write(f"{keyword_spec.keyword}")
-    if keyword_spec.specification is not None and keyword_spec.specification.terminated:
-        buf.write("\n/")
+    _ = buf.write(f'{keyword_spec.keyword}')
+    spec = keyword_spec.specification
+    if spec is not None and not isinstance(spec, NoDataSpecification):
+        raise ValueError(
+            '`keyword_spec.specification` should be None or of type `NoDataSpecification`.'
+        )
+    if spec is not None and spec.terminated:
+        _ = buf.write('\n/')
 
 
-DUMP_ROUTINES = {
+DUMP_ROUTINES: dict[
+    DataTypes | None,
+    Callable[[KeywordSpecification, ValueType, PWriteBuf, pathlib.Path | None], None],
+] = {
     DataTypes.OBJECT_LIST: lambda keyword_spec, val, buf, _: _dump_object_list(
         keyword_spec, val, buf
     ),
@@ -223,52 +336,59 @@ DUMP_ROUTINES = {
 }
 
 
-def _dump_statement(val, buf, closing_slash=True, new_line=True):
+def _dump_statement(
+    val: pd.DataFrame | pd.Series | np.ndarray | tuple[Any, ...],
+    buf: PWriteBuf,
+    closing_slash: bool = True,
+    new_line: bool = True,
+):  # pyright: ignore[reportExplicitAny]
     if isinstance(val, pd.DataFrame):
         if val.shape[0] != 1:
-            raise ValueError("Val shoud have exactly one row.")
+            raise ValueError('Val shoud have exactly one row.')
         vals = [val[col][0] for col in val.columns]
     elif isinstance(val, pd.Series):
         vals = val.values
     else:
         vals = val
-    vals = [nan_to_none(v) for v in vals]
+    vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
     str_representaions = [
-        _string_representation(v) if v is not None else "" for v in vals
+        _string_representation(v) if v is not None else '' for v in vals
     ]
     str_representaions = _replace_empty_vals(str_representaions)
     if len(str_representaions) == 0:
-        str_representaions.append("*")
-    result = "\t".join(str_representaions)
-    nl = "\n" if new_line else ""
+        str_representaions.append('*')
+    result = '\t'.join(str_representaions)
+    nl = '\n' if new_line else ''
 
-    result += nl if not closing_slash else "/" + nl
-    buf.write(result)
+    result += nl if not closing_slash else '/' + nl
+    _ = buf.write(result)
 
 
-def _string_representation(v):
+def _string_representation(v: Any):  # pyright: ignore[reportAny, reportExplicitAny]
     if v is None:
-        return ""
+        return ''
     if isinstance(v, numbers.Number):
         r = str(v)
-        if "e" in r:
+        if 'e' in r:
+            assert isinstance(v, (float, np.floating))
             return np.format_float_scientific(
-                v, unique=True, trim="-", exp_digits=1
+                v, unique=True, trim='-', exp_digits=1
             ).upper()
         return r
     if isinstance(v, str):
-        if any(symbol in v for symbol in " \t"):
+        if any(symbol in v for symbol in ' \t'):
             return "'" + v + "'"
     return str(v)
 
 
-def _replace_empty_vals(vals):
+def _replace_empty_vals(vals: Sequence[str]) -> list[str]:
     vals = copy.copy(vals)
+    vals = list(vals)
     while True:
         start = None
         end = None
         for i, s in enumerate(vals):
-            if s != "":
+            if s != '':
                 if start is not None:
                     break
             else:
@@ -285,77 +405,86 @@ def _replace_empty_vals(vals):
                 del vals[start:]
                 continue
             if start == end:
-                replacement = "*"
+                replacement = '*'
             else:
-                replacement = f"{end - start + 1}*"
+                replacement = f'{end - start + 1}*'
             vals[start : end + 1] = [replacement]
-
     return vals
 
 
-def nan_to_none(val):
-    if isinstance(val, numbers.Number) and np.isnan(val):
+def nan_to_none(val: IntType | np.floating | str):
+    if isinstance(val, (numbers.Number)) and np.isnan(val):
         return None
     if val == INT_NAN:
         return None
-    if val == "":
+    if val == '':
         return None
     return val
 
 
-def dump(data, path, inplace_scedule=False, filename=None):
+def dump(
+    data: DataType,
+    path: pathlib.Path,
+    inplace_scedule: bool = False,
+    filename: str | None = None,
+):
     if not path.exists():
         path.mkdir()
 
-    include_dir = path / "include"
+    include_dir = path / 'include'
 
     if not include_dir.exists():
         include_dir.mkdir()
 
     if filename is None:
-        for key, val in data["RUNSPEC"]:
-            if key == "TITLE":
-                filename = f"{val}.data"
+        for key, val in data['RUNSPEC']:
+            if key == 'TITLE':
+                filename = f'{val}.data'
 
     if filename is None:
         raise ValueError(
-            "Filename is not specified and no TITLE keyword in RUNSPEC section."
+            'Filename is not specified and no TITLE keyword in RUNSPEC section.'
         )
 
     with ExitStack() as stack:
-        buf = stack.enter_context(open(path / filename, "w"))
+        buf = stack.enter_context(open(path / filename, 'w'))
         for section in (
-            "",
-            "RUNSPEC",
-            "GRID",
-            "EDIT",
-            "PROPS",
-            "REGIONS",
-            "SOLUTION",
-            "SUMMARY",
-            "SCHEDULE",
+            '',
+            'RUNSPEC',
+            'GRID',
+            'EDIT',
+            'PROPS',
+            'REGIONS',
+            'SOLUTION',
+            'SUMMARY',
+            'SCHEDULE',
         ):
             if section in data:
-                if section != "":
-                    buf.write(f"{section}\n\n")
-                if section == "SCHEDULE" and not inplace_scedule:
-                    schedule_path = include_dir / "schedule.inc"
-                    buf.write("INCLUDE\n")
-                    buf.write(('"' + str(schedule_path.relative_to(path))) + '"')
-                    buf.write("\n/\n\n")
-                    buf_tmp = stack.enter_context(open(schedule_path, "w"))
+                if section != '':
+                    _ = buf.write(f'{section}\n\n')
+                if section == 'SCHEDULE' and not inplace_scedule:
+                    schedule_path = include_dir / 'schedule.inc'
+                    _ = buf.write('INCLUDE\n')
+                    _ = buf.write(('"' + str(schedule_path.relative_to(path))) + '"')
+                    _ = buf.write('\n/\n\n')
+                    buf_tmp = stack.enter_context(open(schedule_path, 'w'))
                 else:
                     buf_tmp = buf
                 for key, val in data[section]:
-                    if DATA_DIRECTORY[key] is not None:
-                        spec = DATA_DIRECTORY[key]
-                    else:
+                    spec = DATA_DIRECTORY[key]
+                    if spec is None:
                         spec = get_dynamic_keyword_specification(key, data)
                     DUMP_ROUTINES[spec.type](spec, val, buf_tmp, include_dir)
-                    buf_tmp.write("\n\n")
+                    _ = buf_tmp.write('\n\n')
 
 
-def _dump_array_ascii(buffer, array, header=None, fmt="%f", compressed=True):
+def _dump_array_ascii(
+    buffer: PWriteBuf,
+    array: npt.NDArray[np.floating | np.integer | np.bool],
+    header: str | None = None,
+    fmt: str = '%f',
+    compressed: bool = True,
+):
     """Writes array-like data into an ASCII buffer.
 
     Parameters
@@ -369,9 +498,10 @@ def _dump_array_ascii(buffer, array, header=None, fmt="%f", compressed=True):
         Format to be passed into ``numpy.savetxt`` function. Default to '%f'.
     compressed : bool
         If True, uses compressed typing style
+
     """
     if header is not None:
-        buffer.write(header + "\n")
+        _ = buffer.write(header + '\n')
 
     if compressed:
         i = 0
@@ -381,20 +511,20 @@ def _dump_array_ascii(buffer, array, header=None, fmt="%f", compressed=True):
             while (i + count < len(array)) and (array[i + count] == array[i]):
                 count += 1
             if count <= 4:
-                buffer.write(" ".join([fmt % array[i]] * count))
+                _ = buffer.write(' '.join([fmt % array[i]] * count))
                 items_written += count
             else:
-                buffer.write(str(count) + "*" + fmt % array[i])
+                _ = buffer.write(''.join((str(count), '*', fmt % array[i])))
                 items_written += 1
             i += count
             if items_written > MAX_STRLEN:
-                buffer.write("\n")
+                _ = buffer.write('\n')
                 items_written = 0
             elif i < len(array):
-                buffer.write(" ")
-        buffer.write("\n")
+                _ = buffer.write(' ')
+        _ = buffer.write('\n')
     else:
         for i in range(0, len(array), MAX_STRLEN):
-            buffer.write(" ".join([fmt % d for d in array[i : i + MAX_STRLEN]]))
-            buffer.write("\n")
-        buffer.write("\n")
+            _ = buffer.write(' '.join([fmt % d for d in array[i : i + MAX_STRLEN]]))  # pyright: ignore[reportAny]
+            _ = buffer.write('\n')
+        _ = buffer.write('\n')
