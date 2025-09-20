@@ -337,11 +337,11 @@ DUMP_ROUTINES: dict[
 
 
 def _dump_statement(
-    val: pd.DataFrame | pd.Series | np.ndarray | tuple[Any, ...],
+    val: pd.DataFrame | pd.Series | np.ndarray | tuple[Any, ...],  # pyright: ignore[reportExplicitAny]
     buf: PWriteBuf,
     closing_slash: bool = True,
     new_line: bool = True,
-):  # pyright: ignore[reportExplicitAny]
+):
     if isinstance(val, pd.DataFrame):
         if val.shape[0] != 1:
             raise ValueError('Val shoud have exactly one row.')
@@ -485,7 +485,8 @@ def _dump_array_ascii(
     fmt: str = '%f',
     compressed: bool = True,
 ):
-    """Writes array-like data into an ASCII buffer.
+    """
+    Writes array-like data into an ASCII buffer.
 
     Parameters
     ----------
