@@ -1,3 +1,5 @@
+"""Test dynamic specfication generation."""
+
 from collections.abc import Sequence
 from typing import cast
 import pandas as pd
@@ -84,6 +86,7 @@ TEST_DATA = (
     'kw, data, expected', [(kw, data, expected) for ((kw, data), expected) in TEST_DATA]
 )
 def test_dynamic_specification(kw: str, data: DataType, expected: KeywordSpecification):
+    """Test dynamic specfication generation."""
     if isinstance(expected, Exception):
         with pytest.raises(type(expected)):
             res = get_dynamic_keyword_specification(kw, data)

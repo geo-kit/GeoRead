@@ -1,3 +1,5 @@
+"""Test StringIteratorIO."""
+
 import pathlib
 
 import pytest
@@ -15,6 +17,7 @@ RESULT_LINES = (
 
 @pytest.fixture
 def iterator():
+    """Provide iterator fixture."""
     data_file_path = (
         pathlib.Path(__file__).parent
         / 'data'
@@ -25,12 +28,14 @@ def iterator():
 
 
 def test_iterator(iterator: StringIteratorIO):
+    """Test that iterator returns proper values."""
     with iterator:
         for line1, line2 in zip(iterator, RESULT_LINES):
             assert line1 == line2
 
 
 def test_current_file(iterator: StringIteratorIO):
+    """Test that iterators properly recognizes current file."""
     with iterator:
         for line in iterator:
             if line.startswith('inc1'):
@@ -56,6 +61,7 @@ def test_current_file(iterator: StringIteratorIO):
 
 
 def test_line_number(iterator: StringIteratorIO):
+    """Test that iterator properly recognizes current line number."""
     with iterator:
         assertions = [False, False]
         for line in iterator:

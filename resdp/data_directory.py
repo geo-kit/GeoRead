@@ -1,3 +1,5 @@
+"""Classes for keyword specifications and directory itself."""
+
 from collections.abc import Sequence, Callable
 from enum import Enum, auto
 import itertools
@@ -153,6 +155,18 @@ _ATM_TO_PSI = 14.69
 
 
 class ArrayWithUnits(NamedTuple):
+    """
+    Array with units.
+
+    Attributes
+    ----------
+    units : str
+        Data units.
+    data : npt.NDArray[np.integer | np.floating | np.bool]
+        Array data.
+
+    """
+
     units: str
     data: npt.NDArray[np.integer | np.floating | np.bool]
 
@@ -182,6 +196,23 @@ DTypeString = Literal['int', 'float', 'text']
 
 
 class DataTypes(Enum):
+    """
+    Types of data corresponding to specific keywords.
+
+    Attributes
+    ----------
+    STRING : Single string or date.
+    SINGLE_STATEMENT : Single statement.
+    STATEMENT_LIST : List of statements.
+    ARRAY : Array.
+    TABLE_SET : Set of tables.
+    PARAMETERS : Parameters.
+    OBJECT_LIST : List of strings or date corresponding to specific objects.
+    RECORDS : Set of records of heterogeneous types.
+    ARRAY_WITH_UNITS : ArrayWithUnits.
+
+    """
+
     STRING = auto()
     SINGLE_STATEMENT = auto()
     STATEMENT_LIST = auto()
@@ -194,6 +225,32 @@ class DataTypes(Enum):
 
 
 class SECTIONS(Enum):
+    """
+    Model data sections.
+
+    Attributes
+    ----------
+    RUNSPEC : str
+        RUNSPEC section.
+    NONE : str
+        No section.
+    GRID : str
+        GRID section.
+    SCHEDULE : str
+        SCHEDULE section.
+    EDIT : str
+        EDIT section.
+    PROPS : str
+        PROPS section.
+    SOLUTION : str
+        SOLUTION section.
+    SUMMARY : str
+        SUMMARY section.
+    REGIONS : str
+        REGIONS section
+
+    """
+
     RUNSPEC = 'RUNSPEC'
     NONE = ''
     GRID = 'GRID'
@@ -218,20 +275,71 @@ DTYPES = {
 
 
 class StringSpecification(NamedTuple):
+    """
+    Specification for string data type.
+
+    Attributes
+    ----------
+    date : bool, default False
+        Does string represents date.
+
+    """
+
     date: bool = False
 
 
 class ParametersSpecification(NamedTuple):
+    """
+    Specification for parameter data type.
+
+    Attributes
+    ----------
+    tabulated : bool, default False
+        Are values tabulated.
+
+    """
+
     tabulated: bool = False
 
 
 class StatementSpecification(NamedTuple):
+    """
+    Specification for statement data type.
+
+    Attributes
+    ----------
+    columns : Sequence[str]
+        Statement columns.
+    dtypes : Sequence[DTypeString]
+        Column data types.
+    terminated : bool, default False
+        Is statement teminated by slash.
+
+    """
+
     columns: Sequence[str]
     dtypes: Sequence[DTypeString]
     terminated: bool = True
 
 
 class TableSpecification(NamedTuple):
+    """
+    Specifiction for table data type.
+
+    Attributes
+    ----------
+    columns : Sequence[str]
+        Table columns.
+    domain : Sequence[int] | None
+    dtypes : Sequence[DTypeString]
+        Column data types.
+    header : StatementSpecification | None
+        Header specification.
+    number : int | Callable[[DataType | None], IntType]
+        Number of tables.
+
+    """
+
     columns: Sequence[str] | Callable[[pd.DataFrame], Sequence[str]]
     domain: Sequence[int] | None
     dtypes: Sequence[DTypeString] | DTypeString = 'float'
@@ -246,10 +354,42 @@ class TableSpecification(NamedTuple):
 
 
 class ArraySpecification(NamedTuple):
+    """
+    Specification for array data type.
+
+    Attributes
+    ----------
+    dtype : type
+        Data type.
+
+    """
+
     dtype: type
 
 
 class RecordsSpecification(NamedTuple):
+    """
+    Specification for records data type.
+
+    Attributes
+    ----------
+    specifications : Sequence[StatementSpecification | ArraySpecification] | None
+    dynamic : bool, default False
+    get_next_specification : Callable[
+            [
+                Sequence[
+                    pd.DataFrame
+                    | npt.NDArray[np.integer | np.floating | np.bool]
+                    | tuple[pd.DataFrame, pd.DataFrame]
+                ]
+            ],
+            StatementSpecification | ArraySpecification,
+        ]
+        | None
+        Callable to get new specification.
+
+    """
+
     specifications: Sequence[StatementSpecification | ArraySpecification] | None
     dynamic: bool = False
     get_next_specification: (
@@ -268,11 +408,33 @@ class RecordsSpecification(NamedTuple):
 
 
 class ObjectSpecification(NamedTuple):
+    """
+    Specification for object data type.
+
+    Attributes
+    ----------
+    terminated : bool, default False
+        Should objects be terminated by slashes.
+    date : bool, default False
+        Does each object represent date.
+
+    """
+
     terminated: bool = False
     date: bool = False
 
 
 class NoDataSpecification(NamedTuple):
+    """
+    Specification for entries with no data.
+
+    Attributes
+    ----------
+    terminated : bool, default False
+        Is keyword terminated with slash.
+
+    """
+
     terminated: bool = False
 
 
@@ -290,6 +452,22 @@ SpecificationType = (
 
 
 class KeywordSpecification(NamedTuple):
+    """
+    Keyword specification.
+
+    Attributes
+    ----------
+    keyword : str
+        Keyword.
+    type : DataTypes | None
+        Data type.
+    specification : SpecificationType
+        Specification for corresponding data type.
+    sections : Sequence[SECTIONS]
+        Sections in which keyword may present.
+
+    """
+
     keyword: str
     type: DataTypes | None
     specification: SpecificationType
@@ -1800,6 +1978,23 @@ def _get_oilviscc_columns_factory(n_comp: IntType):
 def get_dynamic_keyword_specification(
     keyword: str, data: DataType
 ) -> KeywordSpecification:
+    """
+    Construct keyword specification.
+
+    Parameters
+    ----------
+    keyword : str
+        Keyword.
+    data : DataType
+        Loaded data.
+
+    Returns
+    -------
+    KeywordSpecification
+        Keyword Specification.
+
+    """
+
     def _compositional_table(
         kw: str,
         column_name: str,
@@ -2095,7 +2290,7 @@ def get_dynamic_keyword_specification(
 
 
 def _get_ncomp(data: DataType) -> IntType | None:
-    """Number of fluid components."""
+    """Get number of fluid components."""
     n_comp = None
     if 'RUNSPEC' in data:
         for d in data['RUNSPEC']:

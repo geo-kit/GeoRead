@@ -1,3 +1,5 @@
+"""Utils for dumping keywords data."""
+
 from collections.abc import Callable, Sequence
 from contextlib import ExitStack
 import copy
@@ -31,7 +33,22 @@ INPLACE_ARRAYS = ['TSTEP']
 
 
 class PWriteBuf(Protocol):
+    """Protocol for writable buffer."""
+
     def write(self, s: str, /) -> int | None:
+        """
+        Write string to buffer.
+
+        Parameters
+        ----------
+        s : str
+            String to write.
+
+        Returns
+        -------
+        int | None
+
+        """
         pass
 
 
@@ -39,6 +56,22 @@ def format_string_val(
     val: pd.Timestamp | str,
     keyword_spec: StringSpecification | None | ObjectSpecification,
 ) -> str:
+    """
+    Format dates.
+
+    Parameters
+    ----------
+    val : pd.Timestamp | str
+        Value to format.
+    keyword_spec : StringSpecification | None | ObjectSpecification
+        Keyword specification.
+
+    Returns
+    -------
+    str
+        Formatted string.
+
+    """
     if keyword_spec is not None and keyword_spec.date:
         if not isinstance(val, pd.Timestamp):
             raise ValueError('`val` should be of type pandas.Timestamp.')
@@ -153,7 +186,7 @@ def _dump_table(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteB
         )
         for row in row_iterator:
             vals = list(row)
-            vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportAny]
+            vals = [_nan_to_none(v) for v in vals]  # pyright: ignore[reportAny]
             str_representaions = [
                 _string_representation(v) if v is not None else '' for v in vals
             ]
@@ -173,7 +206,7 @@ def _dump_multitable(val: pd.DataFrame, buf: PWriteBuf):
                 vals = [*ind1] + vals
             else:
                 vals = [ind1[1]] + vals
-            vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportArgumentType]
+            vals = [_nan_to_none(v) for v in vals]  # pyright: ignore[reportArgumentType]
             str_representations = [
                 _string_representation(v) if v is not None else '' for v in vals
             ]
@@ -239,7 +272,9 @@ def _dump_object_list(
     _ = buf.write('/')
 
 
-def dump_parameters(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf):
+def _dump_parameters(
+    keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteBuf
+):
     spec = keyword_spec.specification
     if not isinstance(spec, ParametersSpecification):
         raise ValueError(
@@ -248,7 +283,7 @@ def dump_parameters(keyword_spec: KeywordSpecification, val: ValueType, buf: PWr
     if not isinstance(val, dict):
         raise ValueError
     if spec.tabulated:
-        return dump_tabulated_parameters(keyword_spec, val, buf)
+        return _dump_tabulated_parameters(keyword_spec, val, buf)
 
     _ = buf.write(keyword_spec.keyword + '\n')
     res = ' '.join([f'{k}' if v is None else f'{k}={v}' for k, v in val.items()])
@@ -256,7 +291,7 @@ def dump_parameters(keyword_spec: KeywordSpecification, val: ValueType, buf: PWr
     _ = buf.write('\n/')
 
 
-def dump_tabulated_parameters(
+def _dump_tabulated_parameters(
     keyword_spec: KeywordSpecification, val: dict[str, str | None], buf: PWriteBuf
 ):
     _ = buf.write(keyword_spec.keyword + '\n')
@@ -314,7 +349,7 @@ DUMP_ROUTINES: dict[
     DataTypes.STATEMENT_LIST: lambda keyword_spec, val, buf, _: _dump_statement_list(
         keyword_spec, val, buf
     ),
-    DataTypes.PARAMETERS: lambda keyword_spec, val, buf, _: dump_parameters(
+    DataTypes.PARAMETERS: lambda keyword_spec, val, buf, _: _dump_parameters(
         keyword_spec, val, buf
     ),
     DataTypes.ARRAY: _dump_array,
@@ -350,7 +385,7 @@ def _dump_statement(
         vals = val.values
     else:
         vals = val
-    vals = [nan_to_none(v) for v in vals]  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    vals = [_nan_to_none(v) for v in vals]  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
     str_representaions = [
         _string_representation(v) if v is not None else '' for v in vals
     ]
@@ -412,7 +447,7 @@ def _replace_empty_vals(vals: Sequence[str]) -> list[str]:
     return vals
 
 
-def nan_to_none(val: IntType | np.floating | str):
+def _nan_to_none(val: IntType | np.floating | str):
     if isinstance(val, (numbers.Number)) and np.isnan(val):
         return None
     if val == INT_NAN:
@@ -428,6 +463,21 @@ def dump(
     inplace_scedule: bool = False,
     filename: str | None = None,
 ):
+    """
+    Dump model data.
+
+    Parameters
+    ----------
+    data : DataType
+        Model data.
+    path : pathlib.Path
+        Path to dump the model.
+    inplace_scedule : bool, default False.
+        Should schedule be dumped inplace.
+    filename : str | None, default None.
+        Name of the main model file, if None filename is taken from `TITLE` field in the `RUNSPEC`.
+
+    """
     if not path.exists():
         path.mkdir()
 
@@ -486,15 +536,16 @@ def _dump_array_ascii(
     compressed: bool = True,
 ):
     """
-    Writes array-like data into an ASCII buffer.
+    Write array-like data into an ASCII buffer.
 
     Parameters
     ----------
-    buffer : buffer-like
+    buffer : PWriteBuf
+        Destination buffer.
     array : 1d, array-like
-        Array to be saved
+        Array to be saved.
     header : str, optional
-        String to be written line before the array
+        String to be written line before the array.
     fmt : str or sequence of strs, optional
         Format to be passed into ``numpy.savetxt`` function. Default to '%f'.
     compressed : bool

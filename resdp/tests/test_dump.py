@@ -1,3 +1,5 @@
+"""Test dump routines."""
+
 import io
 import itertools
 import pathlib
@@ -1058,6 +1060,7 @@ def test_dump_keyword(
     expected: str,
     tmp_path: pathlib.Path,
 ):
+    """Test keyword dump."""
     if isinstance(input[0], KeywordSpecification):
         specification = input[0]
     else:
@@ -1079,6 +1082,7 @@ def test_dump_keyword(
 
 
 def test_dump_load(tmp_path: pathlib.Path):
+    """Test dump and subsequent load of tme model data."""
     egg_model_path = (
         pathlib.Path(__file__).parent / 'data' / 'egg' / 'Egg_Model_ECL.DATA'
     )

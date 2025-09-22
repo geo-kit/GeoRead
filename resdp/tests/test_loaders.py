@@ -1,3 +1,5 @@
+"""Test keyword data loading utils."""
+
 from collections.abc import Iterator, Sequence
 import itertools
 from typing import cast
@@ -1428,6 +1430,8 @@ def test_load(
     input: tuple[str, DataType | None],
     expected: tuple[str, ValueType] | ValueError,
 ):
+    """Test keyword data loading."""
+
     class IterPrev:
         def __init__(self, buf: Iterator[str]):
             self._buf: Iterator[str] = buf
@@ -1524,6 +1528,7 @@ def test_decompress(
     dtype: type | None,
     expected: npt.NDArray[np.floating | np.integer | np.bool],
 ):
+    """Test decompress array."""
     res = decompress_array(inp, dtype)
     np.testing.assert_equal(res, expected)
 
@@ -1540,6 +1545,7 @@ PARSE_VALS_TEST_DATA = [
 def test_parse_vals(
     inp: tuple[list[str | None], int, list[str]], expected: list[None | str]
 ):
+    """Test `parse_vals` function."""
     full, shift, vals = inp
     exp, exp_shift = expected
     res, res_shift = parse_vals(full, shift, vals)

@@ -1,3 +1,5 @@
+"""Test load dynamic reservoir model."""
+
 from collections.abc import Sequence
 import pathlib
 import pickle
@@ -10,6 +12,7 @@ from resdp.load_utils import load
 
 
 def test_load():
+    """Test loading Egg reservoir model."""
     egg_model_path = (
         pathlib.Path(__file__).parent / 'data' / 'egg' / 'Egg_Model_ECL.DATA'
     )

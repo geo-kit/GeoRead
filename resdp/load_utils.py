@@ -1,3 +1,5 @@
+"""Utils for data loading."""
+
 from collections.abc import Callable, Iterator, Sequence, Generator
 from contextlib import ExitStack
 import copy
@@ -44,9 +46,43 @@ DEFAULT_ENCODINGS = ['utf-8', 'cp1251']
 
 
 class PReadBuf(Protocol):
-    def __iter__(self) -> Iterator[str]: ...
-    def __next__(self) -> str: ...
-    def prev(self) -> Self: ...
+    """Protocol for readable buffer."""
+
+    def __iter__(self) -> Iterator[str]:
+        """
+        Get sting iterator.
+
+        Returns
+        -------
+        Iterator[str]
+            Iterator.
+
+        """
+        ...
+
+    def __next__(self) -> str:
+        """
+        Next string.
+
+        Returns
+        -------
+        str
+            string.
+
+        """
+        ...
+
+    def prev(self) -> Self:
+        """
+        Move cursor to the previous string.
+
+        Returns
+        -------
+        Self
+            self.
+
+        """
+        ...
 
 
 def _load_string(
@@ -347,16 +383,17 @@ def _load_records(keyword_spec: SpecificationType, buffer: PReadBuf) -> RecordVa
 
 
 def _read_table_data(buffer: PReadBuf, depth: int, n: IntType) -> list[list[str]]:
-    """Read numerical data for table.
+    """
+    Read numerical data for table.
 
     Parameters
     ----------
-    buffer : StringIteratorIO
+    buffer : PReadBuf
         String buffer to read.
-    depth : _type_
+    depth : int
         Depth of the table nesting (2 for multiindex table, 1 for normal table).
-    dtype : _type_
-        Data dtype.
+    n : IntType
+        Number of tables to read.
 
     Returns
     -------
@@ -468,16 +505,19 @@ def read_array(
     compressed: bool = True,
     skip_first_word: bool = False,
 ):
-    """Read array data from a string buffer before first occurrence of '/' symbol.
+    """
+    Read array data from a string buffer before first occurrence of '/' symbol.
 
     Parameters
     ----------
     buffer : buffer
         String buffer to read.
-    dtype : dtype or None
+    dtype : dtype or None, default None.
         Defines dtype of an output array. If not specified, float array is returned.
-    compressed : bool
+    compressed : bool, default True.
         If True, A*B will be interpreted as B repeated A times.
+    skip_first_word: bool, default False
+        Should first word be skipped.
 
     Returns
     -------
@@ -509,9 +549,7 @@ def read_array(
 def decompress_array(
     s: str, dtype: type | None
 ) -> npt.NDArray[np.floating | np.integer | np.bool]:
-    """Extracts compressed numerical array from ASCII string.
-    Interprets A*B as B repeated A times.
-    """
+    """Extract compressed numerical array from ASCII string. Interprets A*B as B repeated A times."""
     if dtype is None:
         dtype = float
     nums: list[float | int | bool] = []
@@ -586,20 +624,15 @@ def parse_vals(full: list[str | None], shift: int, vals: list[str]):
 
 
 def _load_statement_list(keyword_spec: SpecificationType, buf: PReadBuf):
-    """Parse Eclipse keyword data to dataframe.
+    """
+    Parse Eclipse keyword data to dataframe.
 
     Parameters
     ----------
-    buffer : StringIteratorIO
+    keyword_spec : SpecificationType
+        Keyword specification.
+    buf : PReadBuf
         Buffer to read data from.
-    columns : list
-        Keyword columns.
-    column_types : dict
-        Types of values in corrsponding columns.
-    defaults : dict, optional
-        Dictionary with default values, by default None.
-    date : datetime, optional
-        Date to be included in the output DataFrame.
 
     Returns
     -------
@@ -673,6 +706,19 @@ class StringIteratorIO:
         encoding: str | None = None,
         logger: logging.Logger | None = None,
     ):
+        """
+        Initialize.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Path to main model file.
+        encoding : str | None, default None
+            Encoding.
+        logger : logging.Logger | None, default None
+            Logger.
+
+        """
         self._path: pathlib.Path = path
         if (encoding is not None) and encoding.startswith('auto'):
             encoding_tmp = encoding.split(':')
@@ -709,14 +755,33 @@ class StringIteratorIO:
 
     @property
     def current_file(self) -> pathlib.Path:
+        """
+        File where cursor is located.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to file.
+
+        """
         if self._include is not None:
             return self._include.current_file
         return self._path
 
     def __iter__(self):
+        """Return iterator."""
         return self
 
     def __next__(self) -> str:
+        """
+        Return next string.
+
+        Returns
+        -------
+        str
+            Next string.
+
+        """
         if self._include is not None:
             try:
                 return next(self._include)
@@ -749,13 +814,13 @@ class StringIteratorIO:
                 path = LOADERS[DataTypes.STRING](spec.specification, self, None)
                 if not isinstance(path, str):
                     raise ValueError('Path should be of type `str`.')
-                self.include_file(path)
+                self._include_file(path)
                 return next(self)
             self._last_line = line
             return line
         return next(self)
 
-    def include_file(self, path: str | pathlib.Path):
+    def _include_file(self, path: str | pathlib.Path):
         path = self._path.parent.joinpath(pathlib.Path(path))
         if self._stack is None:
             raise ValueError('`self._stack` should not be None.')
@@ -793,6 +858,11 @@ class StringIteratorIO:
         return self
 
     def __enter__(self):
+        """
+        Enter context associated with the buffer.
+
+        Adds corresponding context to the `ExitStack`.
+        """
         with ExitStack() as stack:
             self._logger.info(f'Start reading {self._path}.')
             self._f = stack.enter_context(
@@ -807,6 +877,7 @@ class StringIteratorIO:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ):
+        """Exit the context. Closes all stack."""
         _ = exc_type, exc_val, exc_tb
         if self._stack is None:
             raise ValueError('`self._stack` should not be None.')
@@ -846,6 +917,24 @@ def load(
     logger: logging.Logger | None = None,
     encoding: str | None = None,
 ) -> DataType:
+    """
+    Load model data.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to main model file.
+    logger : logging.Logger | None, default None
+        Logger.
+    encoding : str | None, default None
+        Encoding.
+
+    Returns
+    -------
+    DataType
+        Model data.
+
+    """
     res: DataType = {}
     sections = [sec.value for sec in SECTIONS]
     if logger is None:
