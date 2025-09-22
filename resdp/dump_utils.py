@@ -385,7 +385,7 @@ def _dump_statement(
         vals = val.values
     else:
         vals = val
-    vals = [_nan_to_none(v) for v in vals]  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
+    vals = [_nan_to_none(v) for v in vals]  # pyright: ignore[reportAny]
     str_representaions = [
         _string_representation(v) if v is not None else '' for v in vals
     ]

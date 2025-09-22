@@ -8,13 +8,16 @@ dependencies = [
 ]
 requires-python =">=3.11"
 [project.optional-dependencies]
+test = [
+    'pytest'
+]
 dev = [
-    'pytest',
+    'resdp[test]',
     'ruff',
     'pandas-stubs',
     'basedpyright',
     'pre-commit'
-    ]
+]
 [tool.ruff]
 [tool.ruff.lint]
 extend-select = [
