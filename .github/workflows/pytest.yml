@@ -39,3 +39,22 @@ jobs:
       - uses: astral-sh/ruff-action@v3
         with:
           args: "format --check"
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install basedpyright
+          pip install .[dev]
+
+      - name: Run basedpyright
+        run: basedpyright
