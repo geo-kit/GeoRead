@@ -29,6 +29,7 @@ from .data_directory import (
     DataTypes,
     IntType,
     NoDataSpecification,
+    NpArray,
     ObjectSpecification,
     ParametersSpecification,
     RecordValueType,
@@ -480,9 +481,7 @@ def _read_table_data(buffer: PReadBuf, depth: int, n: IntType) -> list[list[str]
     return data
 
 
-def _load_array(
-    keyword_spec: SpecificationType, buf: PReadBuf
-) -> npt.NDArray[np.floating | np.integer | np.bool]:
+def _load_array(keyword_spec: SpecificationType, buf: PReadBuf) -> NpArray:
     if not isinstance(keyword_spec, ArraySpecification):
         raise ValueError(keyword_spec, ArraySpecification)
     data = read_array(buf, dtype=keyword_spec.dtype)
@@ -504,7 +503,7 @@ def read_array(
     dtype: type | None = None,
     compressed: bool = True,
     skip_first_word: bool = False,
-):
+) -> NpArray:
     """
     Read array data from a string buffer before first occurrence of '/' symbol.
 
@@ -525,7 +524,7 @@ def read_array(
         Parsed array.
 
     """
-    arr: list[npt.NDArray[np.floating | np.integer | np.bool]] = []
+    arr: list[NpArray] = []
     last_line = False
     if dtype is None:
         dtype = float
@@ -543,12 +542,10 @@ def read_array(
             arr.append(x)  # pyright: ignore[reportUnknownArgumentType]
         if last_line:
             break
-    return np.hstack(arr)
+    return cast(NpArray, np.hstack(arr))
 
 
-def decompress_array(
-    s: str, dtype: type | None
-) -> npt.NDArray[np.floating | np.integer | np.bool]:
+def decompress_array(s: str, dtype: type | None) -> NpArray:
     """Extract compressed numerical array from ASCII string. Interprets A*B as B repeated A times."""
     if dtype is None:
         dtype = float

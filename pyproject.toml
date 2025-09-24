@@ -29,3 +29,6 @@ ignore = [
 ]
 [tool.ruff.format]
 quote-style = 'single'
+
+[tool.setuptools.package-data]
+'resdp' = ["py.typed"]

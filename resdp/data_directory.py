@@ -153,6 +153,20 @@ GROUP_SUMMARY_KEYWORDS = (
 REGIONS_SUMMARY_KEYWORDS = ()
 _ATM_TO_PSI = 14.69
 
+NpFloatingArray = (
+    npt.NDArray[np.float16]
+    | npt.NDArray[np.float32]
+    | npt.NDArray[np.float64]
+    | npt.NDArray[np.float128]
+)
+NpIntegerArray = (
+    npt.NDArray[np.int8]
+    | npt.NDArray[np.int16]
+    | npt.NDArray[np.int32]
+    | npt.NDArray[np.int64]
+)
+NpArray = NpIntegerArray | NpFloatingArray | npt.NDArray[np.bool]
+
 
 class ArrayWithUnits(NamedTuple):
     """
@@ -168,20 +182,16 @@ class ArrayWithUnits(NamedTuple):
     """
 
     units: str
-    data: npt.NDArray[np.integer | np.floating | np.bool]
+    data: NpArray
 
 
-RecordValueType = list[
-    pd.DataFrame
-    | tuple[pd.DataFrame, pd.DataFrame]
-    | npt.NDArray[np.floating | np.integer | np.bool]
-]
+RecordValueType = list[pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame] | NpArray]
 ValueType = (
     Sequence[pd.DataFrame]
     | Sequence[tuple[pd.DataFrame, pd.DataFrame]]
     | pd.DataFrame
     | str
-    | npt.NDArray[np.integer | np.floating | np.bool]
+    | NpArray
     | None
     | dict[str, str | None]
     | ArrayWithUnits
