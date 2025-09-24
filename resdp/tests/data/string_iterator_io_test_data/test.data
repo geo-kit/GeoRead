@@ -1,8 +1,0 @@
-line 1
---line2
-line 3 -- comment
-
-INCLUDE
-inc1.inc
-/
-line 7
