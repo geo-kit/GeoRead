@@ -462,7 +462,7 @@ def dump(
     path: pathlib.Path,
     inplace_scedule: bool = False,
     filename: str | None = None,
-):
+) -> None:
     """
     Dump model data.
 
