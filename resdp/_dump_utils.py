@@ -530,7 +530,7 @@ def dump(
 
 def _dump_array_ascii(
     buffer: PWriteBuf,
-    array: npt.NDArray[np.floating | np.integer | np.bool],
+    array: npt.NDArray[np.floating | np.integer | np.bool_],
     header: str | None = None,
     fmt: str = '%f',
     compressed: bool = True,

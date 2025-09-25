@@ -1526,7 +1526,7 @@ DECOMPRESS_TEST_DATA = [
 def test_decompress(
     inp: str,
     dtype: type | None,
-    expected: npt.NDArray[np.floating | np.integer | np.bool],
+    expected: npt.NDArray[np.floating | np.integer | np.bool_],
 ):
     """Test decompress array."""
     res = decompress_array(inp, dtype)

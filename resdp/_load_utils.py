@@ -352,7 +352,7 @@ def _load_records(keyword_spec: SpecificationType, buffer: PReadBuf) -> RecordVa
     def _spec_generator(
         res: Sequence[
             pd.DataFrame
-            | npt.NDArray[np.floating | np.integer | np.bool]
+            | npt.NDArray[np.floating | np.integer | np.bool_]
             | tuple[pd.DataFrame, pd.DataFrame]
         ],
     ) -> Generator[StatementSpecification | ArraySpecification, None, None]:

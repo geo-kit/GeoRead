@@ -165,7 +165,7 @@ NpIntegerArray = (
     | npt.NDArray[np.int32]
     | npt.NDArray[np.int64]
 )
-NpArray = NpIntegerArray | NpFloatingArray | npt.NDArray[np.bool]
+NpArray = NpIntegerArray | NpFloatingArray | npt.NDArray[np.bool_]
 
 
 class ArrayWithUnits(NamedTuple):
@@ -176,7 +176,7 @@ class ArrayWithUnits(NamedTuple):
     ----------
     units : str
         Data units.
-    data : npt.NDArray[np.integer | np.floating | np.bool]
+    data : npt.NDArray[np.integer | np.floating | np.bool_]
         Array data.
 
     """
@@ -389,7 +389,7 @@ class RecordsSpecification(NamedTuple):
             [
                 Sequence[
                     pd.DataFrame
-                    | npt.NDArray[np.integer | np.floating | np.bool]
+                    | npt.NDArray[np.integer | np.floating | np.bool_]
                     | tuple[pd.DataFrame, pd.DataFrame]
                 ]
             ],
@@ -407,7 +407,7 @@ class RecordsSpecification(NamedTuple):
             [
                 Sequence[
                     pd.DataFrame
-                    | npt.NDArray[np.integer | np.floating | np.bool]
+                    | npt.NDArray[np.integer | np.floating | np.bool_]
                     | tuple[pd.DataFrame, pd.DataFrame]
                 ]
             ],
@@ -488,7 +488,7 @@ def _get_vfpprod_specification(
     data: Sequence[
         pd.DataFrame
         | tuple[pd.DataFrame, pd.DataFrame]
-        | npt.NDArray[np.floating | np.integer | np.bool]
+        | npt.NDArray[np.floating | np.integer | np.bool_]
     ],
 ):
     default_specs = (
