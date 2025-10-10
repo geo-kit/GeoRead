@@ -1,11 +1,9 @@
-from abc import ABC
 from collections import UserDict, UserList
 from collections.abc import Iterable
 import pathlib
-from typing import Literal, Mapping, TypeVar, override
+from typing import Literal
 
-from ._utils import read_header_and_section, read_binary_data, decode
-
+from ._utils import read_sections, read_binary_data, decode
 
 FileType = Literal['EGRID', 'INIT', 'UNRST', 'UNSMRY']
 
@@ -32,8 +30,8 @@ class BinaryFileData(UserList[BinaryAttribute]):
     def __init__(self, path: pathlib.Path):
         super().__init__({})
         self._path: pathlib.Path = path
-        _, data = read_header_and_section(path)
-        self._pos = 0
+        data = read_sections(path)
+        self._pos: int = 0
         for entry in data:
             self.append(BinaryAttribute(
                 self._path,
@@ -66,8 +64,23 @@ class BinaryFileData(UserList[BinaryAttribute]):
         return self._find(range(self._pos, 0, -1), name)
 
 class BinaryData(UserDict[FileType, BinaryFileData]):
-    def __init__(self, ):
+    def __init__(self, path_to_results: pathlib.Path, basename: str):
         super().__init__()
+        filename = basename + '.EGRID'
+        found_files: list[pathlib.Path] = []
+        for f in path_to_results.iterdir():
+            if f.is_file() and f.name.lower() == filename.lower():
+                found_files.append(f)
+        if len(found_files) > 1:
+            raise ValueError(f'{path_to_results} contains multiple `EGRID` files.')
+        if len(found_files) == 1:
+            self['EGRID'] = BinaryFileData(found_files[0])
 
-def load(model_path: pathlib.Path) -> BinaryData:
-    pass
+def load(model_path: pathlib.Path) -> BinaryData | None:
+    basename = model_path.stem
+    results_dir = model_path.parent / 'RESULTS'
+    if not results_dir.is_dir():
+        return None
+    if (results_dir / basename).is_dir():
+        results_dir = results_dir / basename
+    return BinaryData(results_dir, basename)
