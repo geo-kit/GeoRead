@@ -16,7 +16,8 @@ dev = [
     'ruff',
     'pandas-stubs',
     'basedpyright',
-    'pre-commit'
+    'pre-commit',
+    'jupyterlab'
 ]
 [tool.ruff]
 [tool.ruff.lint]
