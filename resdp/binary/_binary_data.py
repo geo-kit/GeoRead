@@ -63,6 +63,17 @@ class BinaryFileData(UserList[BinaryAttribute]):
     def find_prev(self, name: str):
         return self._find(range(self._pos, 0, -1), name)
 
+    def find_unique(self, name: str):
+        values = []
+        for i in range(0, len(self)):
+            if self[i].name == name:
+                values.append(i)
+                if len(values) > 1:
+                    raise ValueError('Section `{name} is not unique.')
+        if len(values) == 0:
+            return None
+        return values[0]
+
 class BinaryData(UserDict[FileType, BinaryFileData]):
     def __init__(self, path_to_results: pathlib.Path, basename: str):
         super().__init__()
