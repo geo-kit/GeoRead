@@ -11,13 +11,6 @@ requires-python =">=3.11"
 test = [
     'pytest'
 ]
-dev = [
-    'resdp[test]',
-    'ruff',
-    'pandas-stubs',
-    'basedpyright',
-    'pre-commit'
-]
 [tool.ruff]
 [tool.ruff.lint]
 extend-select = [
@@ -32,3 +25,13 @@ quote-style = 'single'
 
 [tool.setuptools.package-data]
 'resdp' = ["py.typed"]
+
+[dependency-groups]
+dev = [
+    'resdp[test]',
+    'ruff',
+    'pandas-stubs',
+    'basedpyright',
+    'pre-commit',
+    "jupyterlab>=4.5.0",
+]
