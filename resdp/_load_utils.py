@@ -334,7 +334,7 @@ def _load_single_statement(keyword_spec: SpecificationType, buffer: PReadBuf):
         df[float_columns] = df[float_columns].astype(float)
     if 'int' in column_types:
         int_columns = [col for col, dt in zip(columns, column_types) if dt == 'int']
-        df[int_columns] = df[int_columns].fillna(INT_NAN).astype(int)  # pyright: ignore[reportUnknownMemberType]
+        df[int_columns] = df[int_columns].astype(float).fillna(INT_NAN).astype(int)  # pyright: ignore[reportUnknownMemberType]
     return df
 
 
