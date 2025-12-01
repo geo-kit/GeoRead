@@ -541,7 +541,7 @@ STATEMENT_LIST_INFO = {
     'RUNCTRL': {'columns': ['PARAMETER', 'VALUE'], 'dtypes': ['text', 'text']},
     'WELSPECS': {
         'columns': [
-            'NAME',
+            'WELL',
             'GROUP',
             'IW',
             'JW',
