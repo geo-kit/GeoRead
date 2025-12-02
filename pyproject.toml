@@ -26,6 +26,9 @@ quote-style = 'single'
 [tool.setuptools.package-data]
 'resdp' = ["py.typed"]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [dependency-groups]
 dev = [
     'resdp[test]',
