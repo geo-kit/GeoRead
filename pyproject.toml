@@ -34,4 +34,5 @@ dev = [
     'basedpyright',
     'pre-commit',
     "jupyterlab>=4.5.0",
+    "ipdb>=0.13.13",
 ]

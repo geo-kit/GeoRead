@@ -922,11 +922,8 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
     **{
         kw: KeywordSpecification(
             kw,
-            DataTypes.STATEMENT_LIST,
-            StatementSpecification(
-                STATEMENT_LIST_INFO[kw]['columns'],
-                cast(Sequence[DTypeString], STATEMENT_LIST_INFO[kw]['dtypes']),
-            ),
+            DataTypes.PARAMETERS,
+            ParametersSpecification(tabulated=True),
             (SECTIONS.RUNSPEC,),
         )
         for kw in ('RUNCTRL',)
@@ -1174,14 +1171,17 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
     'INCLUDE': KeywordSpecification(
         'INCLUDE', DataTypes.STRING, None, [val for val in SECTIONS]
     ),
-    'REPORTSCREEN': KeywordSpecification(
-        'REPORTSCREEN',
-        DataTypes.PARAMETERS,
-        ParametersSpecification(
-            tabulated=True,
-        ),
-        [val for val in SECTIONS],
-    ),
+    **{
+        kw: KeywordSpecification(
+            kw,
+            DataTypes.PARAMETERS,
+            ParametersSpecification(
+                tabulated=True,
+            ),
+            [val for val in SECTIONS],
+        )
+        for kw in ('REPORTSCREEN', 'REPORTFILE')
+    },
     'ENDSCALE': KeywordSpecification(
         'ENDSCALE',
         DataTypes.SINGLE_STATEMENT,
