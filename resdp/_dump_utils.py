@@ -199,7 +199,7 @@ def _dump_multitable(val: pd.DataFrame, buf: PWriteBuf):
     _ = buf.write('\n')
     for _, df in val.groupby(level=0):  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
         for i, (ind1, row) in enumerate(df.iterrows()):
-            vals = row.values.tolist()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+            vals = row.values.tolist()
             if not isinstance(ind1, Sequence):
                 raise ValueError('`val` should have multiindex.')
             if i == 0:
