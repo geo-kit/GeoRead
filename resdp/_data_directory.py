@@ -13,7 +13,7 @@ import numpy as np
 INT_NAN = -99999999
 
 FLUID_KEYWORDS = ('OIL', 'GAS', 'WATER', 'DISGAS')
-ORTHOGONAL_GRID_KEYWORDS = ('DX', 'DY', 'DZ', 'TOPS', 'ACTNUM')
+ORTHOGONAL_GRID_KEYWORDS = ('DX', 'DY', 'DZ', 'TOPS', 'ACTNUM', 'DXV', 'DYV', 'DZV')
 ROCK_GRID_KEYWORDS = ('PORO', 'PERMX', 'PERMY', 'PERMZ', 'NTG')
 TABLES_KEYWORDS = ('DENSITY', 'PVCDO', 'PVTW', 'ROCK', 'SWOF')
 FIELD_SUMMARY_KEYWORDS = (
@@ -2071,7 +2071,7 @@ def get_dynamic_keyword_specification(
             if n_res is None:
                 n_res = 1
             spec = KeywordSpecification(
-                'RUNSPEC',
+                keyword,
                 DataTypes.RECORDS,
                 RecordsSpecification(
                     [
@@ -2084,7 +2084,7 @@ def get_dynamic_keyword_specification(
                                 'LATERAL_BLOCK_CONNECTION_LOWER_BOUND',
                                 'LATERAL_BLOCK_CONNECTION_UPPER_BOUND',
                             ],
-                            ['int', 'int', 'text', 'int', 'int'],
+                            ['int', 'int', 'text', 'text', 'int', 'int'],
                         ),
                     ]
                     * n_res
