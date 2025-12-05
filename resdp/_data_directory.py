@@ -56,6 +56,8 @@ FIELD_SUMMARY_KEYWORDS = (
     'FOSRC',
     'FHLR',
     'FHLT',
+    'FSTPR',
+    'FSTPT',
 )
 WELL_SUMMARY_KEYWORDS = (
     'WOPR',
@@ -2008,6 +2010,46 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
                 'NETWORK_STATUS',
             ],
             cast(Sequence[DTypeString], (['int'] * 18)),
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'HWELLS': KeywordSpecification('HWELLS', None, None, (SECTIONS.RUNSPEC,)),
+    'WSEGDIMS': KeywordSpecification(
+        'WSEGDIMS',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(
+            [
+                'N_MULTISEGMENT_WELLS',
+                'N_SEGMENTS',
+                'N_BRANCHES',
+                'N_SEGMEN_CHORD_LINKS',
+            ],
+            ('int', 'int', 'int', 'int'),
+        ),
+        (SECTIONS.RUNSPEC,),
+    ),
+    'HEATCRT': KeywordSpecification(
+        'HEATCRT', DataTypes.ARRAY, ArraySpecification(float), (SECTIONS.GRID,)
+    ),
+    'SLGOF': KeywordSpecification(
+        'SLGOF',
+        DataTypes.TABLE_SET,
+        TableSpecification(
+            ['SL', 'KRGO', 'KROG', 'PCOG'],
+            domain=[0],
+            number=_get_sat_fun_regions_number,
+        ),
+        (SECTIONS.PROPS,),
+    ),
+    'ZMF': KeywordSpecification(
+        'ZMF', DataTypes.ARRAY, ArraySpecification(float), (SECTIONS.SOLUTION,)
+    ),
+    'COMPORD': KeywordSpecification(
+        'COMPORD',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            ['NAME', 'METHOD'],
+            ('text', 'text'),
         ),
         (SECTIONS.SCHEDULE,),
     ),
