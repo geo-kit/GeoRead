@@ -53,6 +53,9 @@ FIELD_SUMMARY_KEYWORDS = (
     'FTPRMW',
     'FTPRFO',
     'FTPRMO',
+    'FOSRC',
+    'FHLR',
+    'FHLT',
 )
 WELL_SUMMARY_KEYWORDS = (
     'WOPR',
@@ -97,6 +100,9 @@ WELL_SUMMARY_KEYWORDS = (
     'WOPT',
     'WTPRFW',
     'WTPRMW',
+    'WSTPR',
+    'WSTPT',
+    'WTEMP',
 )
 REGION_SUMMARY_KEYWORDS = ('RGIPL', 'ROIP', 'RWIP', 'RGIP', 'RPR', 'ROE')
 TOTAL_SUMMARY_KEYWORDS = ('FOPT', 'FWPT', 'FWIT')
@@ -1916,6 +1922,95 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
         ),
         (SECTIONS.SCHEDULE,),
     ),
+    'ROCKPROP': KeywordSpecification(
+        'ROCKPROP',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            [
+                'ROCK_TYPE_NUMBER',
+                'INITIAL_PRESSURE',
+                'ROCK_CONDUCTIVITY',
+                'VOLUMETRIC_HEAT_CAPACITY',
+                'HEAT_CAPACITY_TEMPERATURE_COEFFICIENT',
+                'HEAT_LOSS_CALCULATION_METHOD',
+            ],
+            ('int', 'float', 'float', 'float', 'float', 'text'),
+        ),
+        (SECTIONS.GRID,),
+    ),
+    'ROCKCON': KeywordSpecification(
+        'ROCKCON',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            [
+                'ROCK_TYPE_NUMBER',
+                'I1',
+                'I2',
+                'J1',
+                'J2',
+                'K1',
+                'K2',
+                'FACE',
+                'ROCK_INFLUX_COEFFICIENT',
+            ],
+            ('int', 'int', 'int', 'int', 'int', 'int', 'int', 'text', 'float'),
+        ),
+        (SECTIONS.GRID,),
+    ),
+    'ZFACTOR': None,
+    'THANALB': KeywordSpecification('THANALB', None, None, (SECTIONS.PROPS,)),
+    'HEATVAP': None,
+    'TEMPVD': KeywordSpecification(
+        'TEMPVD',
+        DataTypes.TABLE_SET,
+        TableSpecification(
+            ('DEPTH', 'T'),
+            dtypes=['float', 'float'],
+            domain=[0],
+            number=_get_eql_regions_number,
+        ),
+        (SECTIONS.PROPS,),
+    ),
+    'GASVISCT': None,
+    'OILVISCT': KeywordSpecification(
+        'OILVISCT',
+        DataTypes.TABLE_SET,
+        TableSpecification(
+            ('T', 'VISCOSITY'),
+            dtypes=['float', 'float'],
+            domain=[0],
+            number=_get_pvt_regions_number,
+        ),
+        (SECTIONS.PROPS,),
+    ),
+    'RPTPRINT': KeywordSpecification(
+        'RPTPRINT',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(
+            [
+                'STEP_SUMMARY',
+                'FLUID_IN_PLACE_FIELD',
+                'FLUID_IN_PLACE_REGION',
+                'STATUS_OF_GROUPS',
+                'RESERVED1',
+                'STATUS_OF_WELLS',
+                'STATUS_OF_WELL_COMPLETIONS',
+                'SOLUTION_DATA',
+                'CONVERGENCE_OF_NON-LINEAR_EQUATIONS',
+                'WELL_POTENTIALS',
+                'INTER_REGIONS_FLOW',
+                'COMPONENT_FLOWS',
+                'AQUIFER_FLOWS',
+                'HEATER_CONNECTIONS',
+                'RESERVED2',
+                'RESERVED3',
+                'RESERVED4',
+                'NETWORK_STATUS',
+            ],
+            cast(Sequence[DTypeString], (['int'] * 18)),
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
 }
 
 
@@ -2170,6 +2265,10 @@ def get_dynamic_keyword_specification(
         return _compositional_statement('CVTYPE', 'T', 'text', data)
     if keyword == 'SDREF':
         return _compositional_table('SDREF', 'SD', data)
+    if keyword == 'ZFACTOR':
+        return _compositional_table('ZFACTOR', 'ZC', data)
+    if keyword == 'HEATVAP':
+        return _compositional_table('HEATVAP', 'AC', data)
     if keyword == 'GASVISCF':
         n_comp = _get_ncomp(data)
         if n_comp is None:
@@ -2187,6 +2286,21 @@ def get_dynamic_keyword_specification(
             ),
             (SECTIONS.PROPS,),
         )
+    if keyword == 'GASVISCT':
+        n_comp = _get_ncomp(data)
+        if n_comp is None:
+            raise ValueError('No number of components information in `data`.')
+        return KeywordSpecification(
+            'GASVISCT',
+            DataTypes.TABLE_SET,
+            TableSpecification(
+                ['t', *[f'CP{i}' for i in range(1, n_comp + 1)]],
+                domain=[0],
+                number=_get_pvt_regions_number,
+            ),
+            (SECTIONS.PROPS,),
+        )
+
     if keyword == 'KVCR':
         n_comp = _get_ncomp(data)
         if n_comp is None:
