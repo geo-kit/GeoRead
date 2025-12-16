@@ -3,7 +3,6 @@
 from collections.abc import Sequence, Callable
 from enum import Enum, auto
 import itertools
-import pdb
 from typing import Final, Literal, NamedTuple, cast
 
 import pandas as pd
