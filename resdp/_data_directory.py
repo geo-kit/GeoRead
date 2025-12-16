@@ -3,6 +3,7 @@
 from collections.abc import Sequence, Callable
 from enum import Enum, auto
 import itertools
+import pdb
 from typing import Final, Literal, NamedTuple, cast
 
 import pandas as pd
@@ -883,11 +884,15 @@ def _get_sat_fun_regions_number(data: DataType | None = None):
     return _get_generic_region_number(data, 'TABDIMS', 'SAT_REGIONS_NUM')
 
 
-def _get_rock_regions_number(data: DataType | None = None):  # pyright: ignore[reportUnusedFunction]
+def _get_rock_tables_number(data: DataType | None = None):  # pyright: ignore[reportUnusedFunction]
     rock_num = _get_generic_region_number(data, 'TABDIMS', 'ROCK_TABLES_NUM')
     if rock_num == INT_NAN:
         rock_num = _get_generic_region_number(data, 'TABDIMS', 'PVT_REGIONS_NUM')
     return rock_num
+
+
+def _get_rock_regions_number(data: DataType | None = None):
+    return _get_generic_region_number(data, 'ROCKCOMP', 'ROCK_REGIONS_NUM')
 
 
 def _get_eos_regions_number(data: DataType | None = None):
@@ -2053,6 +2058,253 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
         ),
         (SECTIONS.SCHEDULE,),
     ),
+    'ROCKCOMP': KeywordSpecification(
+        'ROCKCOMP',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(
+            [
+                'ROCK_COMPACTION_OPTION',
+                'ROCK_REGIONS_NUM',
+                'WATER_INDUCED_COMPACTION_FLAG',
+                'TRANSMISSIBILITY_POROSITY_FUNCTION',
+            ],
+            ['text', 'int', 'text', 'text'],
+        ),
+        (SECTIONS.RUNSPEC,),
+    ),
+    'NETWORK': KeywordSpecification(
+        'NETWORK',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(
+            ['MAX_NODES', 'MAX_BRANCHES', 'MAX_NODE_BRANCHES'], ('int', 'int', 'int')
+        ),
+        (SECTIONS.RUNSPEC,),
+    ),
+    'TZONE': KeywordSpecification(
+        'TZONE',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(('OIL', 'WATER', 'GAS'), ('text', 'text', 'text')),
+        (SECTIONS.PROPS,),
+    ),
+    'ROCKOPTS': KeywordSpecification(
+        'ROCKOPTS',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(
+            ('OVERBURD_METHOD', 'REFERENCE_PRESSURE_OPTION', 'TABLE_REGION', '_'),
+            ('text', 'text', 'text', 'text'),
+        ),
+        (SECTIONS.PROPS,),
+    ),
+    'RKTRMDIR': KeywordSpecification('RKTRMDIR', None, None, (SECTIONS.PROPS,)),
+    'ROCKTAB': None,
+    'ROCKNUM': KeywordSpecification(
+        'ROCKNUM', DataTypes.ARRAY, ArraySpecification(int), (SECTIONS.REGIONS,)
+    ),
+    'ENDNUM': KeywordSpecification(
+        'ENDNUM', DataTypes.ARRAY, ArraySpecification(int), (SECTIONS.REGIONS,)
+    ),
+    'DATUM': KeywordSpecification(
+        'DATUM',
+        DataTypes.SINGLE_STATEMENT,
+        StatementSpecification(columns=['DATUM_DEPTH'], dtypes=['float']),
+        (SECTIONS.SOLUTION,),
+    ),
+    'PRVD': KeywordSpecification(
+        'PRVD',
+        DataTypes.TABLE_SET,
+        TableSpecification(
+            columns=['DEPTH', 'PRESSURE'], domain=[0], dtypes=['float', 'float']
+        ),
+        (SECTIONS.SOLUTION,),
+    ),
+    'AQUCT': KeywordSpecification(
+        'AQUCT',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'NUMBER',
+                'DATUM_DEPTH',
+                'INITIAL_PRESSURE',
+                'PERMEABILITY',
+                'POROSITY',
+                'TOTAL_COMPRESSIBILITY',
+                'AQUIFER_INNER_RADIUS',
+                'THICKNESS',
+                'INFLUENCE_ANGLE',
+                'PVTW_TABLE',
+                'AQUTAB_TABLE',
+                'INITIAL_SALT_CONCETRATION',
+                'TEMPERATURE',
+                'DENY_WATER_BACKFLOW',
+            ],
+            dtypes=[
+                'int',
+                'float',
+                'float',
+                'float',
+                'float',
+                'float',
+                'float',
+                'float',
+                'float',
+                'int',
+                'int',
+                'float',
+                'float',
+                'text',
+            ],
+        ),
+        (SECTIONS.PROPS, SECTIONS.SCHEDULE, SECTIONS.GRID, SECTIONS.SOLUTION),
+    ),
+    'AQUANCON': KeywordSpecification(
+        'AQUANCON',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'NUMBER',
+                'I1',
+                'I2',
+                'J1',
+                'J2',
+                'K1',
+                'K2',
+                'FACE',
+                'INFLUX_COEFFICIENT',
+                'INFLUX_COEFFICIENT_MULTIPLIER',
+                'ACTIVE_BLOCK_CONNECTIONS',
+            ],
+            dtypes=[
+                'int',
+                'int',
+                'int',
+                'int',
+                'int',
+                'int',
+                'int',
+                'text',
+                'float',
+                'float',
+                'text',
+            ],
+        ),
+        (SECTIONS.GRID, SECTIONS.SOLUTION),
+    ),
+    'HMMLCTAQ': KeywordSpecification(
+        'HMMLCTAQ',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'NUMBER',
+                'PERMEABILITY_MULTIPLIER',
+                'INFLUENCE_ANGLE_MULTIPLIER',
+                'AQUIFER_DEPTH_MULTIPLIER',
+            ],
+            dtypes=['int', 'float', 'float', 'float'],
+        ),
+        (SECTIONS.SOLUTION,),
+    ),
+    'BRANPROP': KeywordSpecification(
+        'BRANPROP',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'DOWNTREE_NODE',
+                'UPTREE_NODE',
+                'VFP_TABLE_NUMBER',
+                'ALQ',
+            ],
+            dtypes=['text', 'text', 'int', 'float'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'NODEPROP': KeywordSpecification(
+        'NODEPROP',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'NAME',
+                'PRESSURE',
+                'UPTREE_NODE_CHOKE_FLAG',
+                'GAS_LIFT_FLAG',
+                'AUTOMATIC_CHOKE_GROUP',
+                'GROUP',
+            ],
+            dtypes=['text', 'text', 'text', 'text', 'text', 'text'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'NWATREM': KeywordSpecification(
+        'NWATREM',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=['NODE', 'WATER_REMOVAL_RATE', 'WATER_FLOW_FRACTION'],
+            dtypes=['text', 'float', 'float'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'WTEST': KeywordSpecification(
+        'WTEST',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'WELL',
+                'TEST_INTERVAL',
+                'CLOSURE_REASON',
+                'TESTS_NUMBER',
+                'STARTUP_TIME',
+            ],
+            dtypes=['text', 'float', 'text', 'int', 'float'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'NETCOMPA': KeywordSpecification(
+        'NETCOMPA',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'INLET_NODE',
+                'OUTLET_NODE',
+                'GROUP',
+                'PHASE',
+                'VFP_TABLE',
+                'ALQ',
+                'GAS_CONSUMPTION_RATE',
+                'EXTRACTED_GAS_CONSUMPTION_GROUP',
+                'COMPRESSOR_TYPE',
+                'COMPESSION_LEVELS_NUMBER',
+                'ALQ_LEVEL1',
+                'SWITCHING_SEQUENCE_NUMBER',
+            ],
+            dtypes=[
+                'text',
+                'text',
+                'text',
+                'text',
+                'int',
+                'float',
+                'float',
+                'text',
+                'text',
+                'int',
+                'float',
+                'int',
+            ],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'WEFAC': KeywordSpecification(
+        'WEFAC',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'WELL',
+                'WELL_EFFICIENCY_FACTOR',
+                'INCLUDE_IN_EXTENDED_NETWORK_CALCULATIONS',
+            ],
+            dtypes=['text', 'float', 'text'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
 }
 
 
@@ -2436,6 +2688,46 @@ def get_dynamic_keyword_specification(
                 domain=None,
                 number=_get_reaction_number,
                 dtypes=cast(Sequence[DTypeString], ['text'] * n_comp),
+            ),
+            (SECTIONS.PROPS,),
+        )
+    if keyword == 'ROCKTAB':
+        for key, _ in data['PROPS']:
+            if key == 'RKTRMDIR':
+                return KeywordSpecification(
+                    'ROCKTAB',
+                    DataTypes.TABLE_SET,
+                    TableSpecification(
+                        (
+                            'PRESSURE',
+                            'POROSITY',
+                            'TRANSMISSIBILITY_MULTIPLIER_X',
+                            'TRANSMISSIBILITY_MULTIPLIER_Y',
+                            'TRANSMISSIBILITY_MULTIPLIER_Z',
+                        ),
+                        [0],
+                        ('float', 'float', 'float', 'float', 'float'),
+                        number=_get_rock_regions_number,
+                    ),
+                    (SECTIONS.PROPS,),
+                )
+
+        return KeywordSpecification(
+            'ROCKTAB',
+            DataTypes.TABLE_SET,
+            TableSpecification(
+                (
+                    'PRESSURE',
+                    'POROSITY',
+                    'TRANSMISSIBILITY_MULTIPLIER',
+                ),
+                [0],
+                (
+                    'float',
+                    'float',
+                    'float',
+                ),
+                number=_get_rock_regions_number,
             ),
             (SECTIONS.PROPS,),
         )
