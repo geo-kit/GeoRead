@@ -18,7 +18,8 @@ for val in range(8, 40):
 
 
 def _get_type_info(data_type: str):
-    """Returns element size, format and element skip for the given data type.
+    """
+    Return element size, format and element skip for the given data type.
 
     Parameters
     ----------
@@ -28,6 +29,7 @@ def _get_type_info(data_type: str):
     Returns
     -------
     type_info: tuple
+
     """
     try:
         return _DATA_TYPES[data_type]
