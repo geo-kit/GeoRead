@@ -236,16 +236,16 @@ def _load_table(
             dtypes = [keyword_spec.dtypes] * n_attrs
         dtypes = cast(Sequence[DTypeString], dtypes)
         if depth == 2:
-            table_parts = []
+            table_parts: list[list[float | int | str]] = []
             for d in region_table_data:
                 n_rows = (len(d) - 1) / (n_attrs - 1)
                 if not n_rows.is_integer():
                     raise ValueError(
                         'Number of element is not aligned with the number of attributes.'
                     )
-                data_tmp = []
+                data_tmp: list[list[float | int | str]] = []
                 for i in range(int(n_rows)):
-                    data_tmp.append(  # pyright: ignore[reportUnknownMemberType]
+                    data_tmp.append(
                         [_parse_val(d[0], dtypes[0])]
                         + [
                             _parse_val(v, t)
@@ -255,7 +255,7 @@ def _load_table(
                             )
                         ]
                     )
-                table_parts += data_tmp  # pyright: ignore[reportUnknownVariableType]
+                table_parts += data_tmp
             table = pd.DataFrame(table_parts, columns=list(columns))
         else:
             if len(region_table_data) < n_attrs:
@@ -280,7 +280,7 @@ def _load_table(
         if 'int' in dtypes:
             int_columns = [col for col, t in zip(columns, dtypes) if t == 'int']
             for col in int_columns:
-                table[col] = table[col].fillna(INT_NAN)  # pyright: ignore[reportUnknownMemberType]
+                table[col] = table[col].fillna(INT_NAN)
                 if (np.mod(table[col], 1) > 0).any():
                     raise ValueError('Noninteger value in integer column.')
                 table[col] = table[col].astype(int)
@@ -326,15 +326,23 @@ def _load_single_statement(keyword_spec: SpecificationType, buffer: PReadBuf):
     df = pd.DataFrame(dict(zip(columns, full)), index=[0])
     if 'text' in column_types:
         text_columns = [col for col, dt in zip(columns, column_types) if dt == 'text']
-        df[text_columns] = df[text_columns].map(  # pyright: ignore[reportUnknownMemberType]
-            lambda x: x.strip('\'"') if x is not None else x  # pyright: ignore[reportUnknownLambdaType, reportUnknownMemberType]
+        df[text_columns] = df[text_columns].map(
+            cast(
+                Callable[
+                    [
+                        str,
+                    ],
+                    str,
+                ],
+                lambda x: x.strip('\'"') if x is not None else x,
+            )  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
         )
     if 'float' in column_types:
         float_columns = [col for col, dt in zip(columns, column_types) if dt == 'float']
         df[float_columns] = df[float_columns].astype(float)
     if 'int' in column_types:
         int_columns = [col for col, dt in zip(columns, column_types) if dt == 'int']
-        df[int_columns] = df[int_columns].astype(float).fillna(INT_NAN).astype(int)  # pyright: ignore[reportUnknownMemberType]
+        df[int_columns] = df[int_columns].astype(float).fillna(INT_NAN).astype(int)
     return df
 
 
