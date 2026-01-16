@@ -5,7 +5,7 @@ from typing import Literal
 
 from ._utils import read_sections, read_binary_data, decode
 
-FileType = Literal['EGRID', 'INIT', 'UNRST', 'UNSMRY', 'X*']
+FileType = Literal['EGRID', 'INIT', 'UNRST', 'UNSMRY', 'X*', 'SMSPEC']
 
 
 class BinaryAttribute:
