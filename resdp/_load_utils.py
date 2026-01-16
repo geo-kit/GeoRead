@@ -334,8 +334,8 @@ def _load_single_statement(keyword_spec: SpecificationType, buffer: PReadBuf):
                     ],
                     str,
                 ],
-                lambda x: x.strip('\'"') if x is not None else x,
-            )  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+                lambda x: x.strip('\'"') if x is not None else x,  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+            )
         )
     if 'float' in column_types:
         float_columns = [col for col, dt in zip(columns, column_types) if dt == 'float']
