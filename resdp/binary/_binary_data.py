@@ -81,7 +81,7 @@ class BinaryFileData(UserList[BinaryAttribute]):
 class BinaryData(UserDict[FileType, BinaryFileData]):
     def __init__(self, path_to_results: pathlib.Path, basename: str):
         super().__init__()
-        for ext in ('EGRID', 'INIT', 'UNRST', 'UNSMRY'):
+        for ext in ('EGRID', 'INIT', 'UNRST', 'UNSMRY', 'SMSPEC'):
             filename = basename + f'.{ext}'
             found_files: list[pathlib.Path] = []
             for f in path_to_results.iterdir():
