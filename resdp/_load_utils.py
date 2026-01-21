@@ -236,7 +236,7 @@ def _load_table(
             dtypes = [keyword_spec.dtypes] * n_attrs
         dtypes = cast(Sequence[DTypeString], dtypes)
         if depth == 2:
-            table_parts = []
+            table_parts: list[list[float | int | str]] = []
             for d in region_table_data:
                 n_rows = (len(d) - 1) / (n_attrs - 1)
                 if not n_rows.is_integer():
@@ -255,7 +255,7 @@ def _load_table(
                             )
                         ]
                     )
-                table_parts += data_tmp  # pyright: ignore[reportUnknownVariableType]
+                table_parts += data_tmp
             table = pd.DataFrame(table_parts, columns=list(columns))
         else:
             if len(region_table_data) < n_attrs:
@@ -280,7 +280,7 @@ def _load_table(
         if 'int' in dtypes:
             int_columns = [col for col, t in zip(columns, dtypes) if t == 'int']
             for col in int_columns:
-                table[col] = table[col].fillna(INT_NAN)  # pyright: ignore[reportUnknownMemberType]
+                table[col] = table[col].fillna(INT_NAN)
                 if (np.mod(table[col], 1) > 0).any():
                     raise ValueError('Noninteger value in integer column.')
                 table[col] = table[col].astype(int)
@@ -326,15 +326,23 @@ def _load_single_statement(keyword_spec: SpecificationType, buffer: PReadBuf):
     df = pd.DataFrame(dict(zip(columns, full)), index=[0])
     if 'text' in column_types:
         text_columns = [col for col, dt in zip(columns, column_types) if dt == 'text']
-        df[text_columns] = df[text_columns].map(  # pyright: ignore[reportUnknownMemberType]
-            lambda x: x.strip('\'"') if x is not None else x  # pyright: ignore[reportUnknownLambdaType, reportUnknownMemberType]
+        df[text_columns] = df[text_columns].map(
+            cast(
+                Callable[
+                    [
+                        str,
+                    ],
+                    str,
+                ],
+                lambda x: x.strip('\'"') if x is not None else x,  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+            )
         )
     if 'float' in column_types:
         float_columns = [col for col, dt in zip(columns, column_types) if dt == 'float']
         df[float_columns] = df[float_columns].astype(float)
     if 'int' in column_types:
         int_columns = [col for col, dt in zip(columns, column_types) if dt == 'int']
-        df[int_columns] = df[int_columns].astype(float).fillna(INT_NAN).astype(int)  # pyright: ignore[reportUnknownMemberType]
+        df[int_columns] = df[int_columns].astype(float).fillna(INT_NAN).astype(int)
     return df
 
 
@@ -583,6 +591,29 @@ def _load_parameters(
     return res
 
 
+def _load_named_table(
+    keyword_spec: SpecificationType, buf: PReadBuf
+) -> tuple[str, pd.DataFrame]:
+    if not isinstance(keyword_spec, TableSpecification):
+        raise ValueError('`keyword_spec` should be of type `TableSpecification`.')
+    _ = buf.prev()
+    line = next(buf)
+    parts = line.split()
+    if len(parts) < 2:
+        raise ValueError('No `name` in keyword string.')
+    if len(parts) > 2:
+        raise ValueError('Multiple `name`s in keyword string')
+    name = parts[1].strip('\'"')
+    tables = _load_table(keyword_spec, buf)
+    if len(tables) != 1:
+        raise ValueError('There should be exactlly one table.')
+    table = tables[0]
+    if not isinstance(table, pd.DataFrame):
+        raise ValueError('`Table should be of type `pandas.DataFrame`.')
+
+    return (name, table)
+
+
 def _load_parameters_tabulated(_, buf: PReadBuf) -> dict[str, str | None]:
     res: dict[str, str | None] = {}
     for line in buf:
@@ -688,6 +719,9 @@ LOADERS: dict[
         keyword_spec, buf
     ),
     DataTypes.RECORDS: lambda keyword_spec, buf, _: _load_records(keyword_spec, buf),
+    DataTypes.NAMED_TABLE: lambda keyword_spec, buf, _: _load_named_table(
+        keyword_spec, buf
+    ),
     DataTypes.ARRAY_WITH_UNITS: lambda keyword_spec, buf, _: _load_array_with_units(
         keyword_spec, buf
     ),

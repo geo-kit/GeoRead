@@ -197,7 +197,7 @@ def _dump_table(keyword_spec: KeywordSpecification, val: ValueType, buf: PWriteB
 
 def _dump_multitable(val: pd.DataFrame, buf: PWriteBuf):
     _ = buf.write('\n')
-    for _, df in val.groupby(level=0):  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+    for _, df in val.groupby(level=0):
         for i, (ind1, row) in enumerate(df.iterrows()):
             vals = row.values.tolist()
             if not isinstance(ind1, Sequence):
