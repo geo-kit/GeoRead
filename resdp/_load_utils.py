@@ -591,6 +591,29 @@ def _load_parameters(
     return res
 
 
+def _load_named_table(
+    keyword_spec: SpecificationType, buf: PReadBuf
+) -> tuple[str, pd.DataFrame]:
+    if not isinstance(keyword_spec, TableSpecification):
+        raise ValueError('`keyword_spec` should be of type `TableSpecification`.')
+    _ = buf.prev()
+    line = next(buf)
+    parts = line.split()
+    if len(parts) < 2:
+        raise ValueError('No `name` in keyword string.')
+    if len(parts) > 2:
+        raise ValueError('Multiple `name`s in keyword string')
+    name = parts[1].strip('\'"')
+    tables = _load_table(keyword_spec, buf)
+    if len(tables) != 1:
+        raise ValueError('There should be exactlly one table.')
+    table = tables[0]
+    if not isinstance(table, pd.DataFrame):
+        raise ValueError('`Table should be of type `pandas.DataFrame`.')
+
+    return (name, table)
+
+
 def _load_parameters_tabulated(_, buf: PReadBuf) -> dict[str, str | None]:
     res: dict[str, str | None] = {}
     for line in buf:
@@ -696,6 +719,9 @@ LOADERS: dict[
         keyword_spec, buf
     ),
     DataTypes.RECORDS: lambda keyword_spec, buf, _: _load_records(keyword_spec, buf),
+    DataTypes.NAMED_TABLE: lambda keyword_spec, buf, _: _load_named_table(
+        keyword_spec, buf
+    ),
     DataTypes.ARRAY_WITH_UNITS: lambda keyword_spec, buf, _: _load_array_with_units(
         keyword_spec, buf
     ),

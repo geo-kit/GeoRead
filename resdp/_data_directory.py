@@ -197,6 +197,7 @@ RecordValueType = list[pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame] | NpArra
 ValueType = (
     Sequence[pd.DataFrame]
     | Sequence[tuple[pd.DataFrame, pd.DataFrame]]
+    | tuple[str, pd.DataFrame]
     | pd.DataFrame
     | str
     | NpArray
@@ -240,6 +241,7 @@ class DataTypes(Enum):
     OBJECT_LIST = auto()
     RECORDS = auto()
     ARRAY_WITH_UNITS = auto()
+    NAMED_TABLE = auto()  # e.g WELLTRACK
 
 
 class SECTIONS(Enum):
@@ -2301,6 +2303,18 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
                 'INCLUDE_IN_EXTENDED_NETWORK_CALCULATIONS',
             ],
             dtypes=['text', 'float', 'text'],
+        ),
+        (SECTIONS.SCHEDULE,),
+    ),
+    'WELLTRACK': KeywordSpecification(
+        'WELLTRACK',
+        DataTypes.NAMED_TABLE,
+        TableSpecification(
+            ['X', 'Y', 'Z', 'MD'],
+            None,
+            ['float', 'float', 'float', 'float'],
+            header=None,
+            number=1,
         ),
         (SECTIONS.SCHEDULE,),
     ),
