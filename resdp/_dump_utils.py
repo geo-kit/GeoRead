@@ -5,7 +5,7 @@ from contextlib import ExitStack
 import copy
 import numbers
 import pathlib
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -282,6 +282,12 @@ def _dump_parameters(
         )
     if not isinstance(val, dict):
         raise ValueError
+
+    if not all(isinstance(v, str) or v is None for v in val.values()):
+        raise ValueError('`val` should be of type dict[str, str|None]')
+
+    val = cast(dict[str, str | None], val)
+
     if spec.tabulated:
         return _dump_tabulated_parameters(keyword_spec, val, buf)
 
