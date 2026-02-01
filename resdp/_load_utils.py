@@ -243,9 +243,9 @@ def _load_table(
                     raise ValueError(
                         'Number of element is not aligned with the number of attributes.'
                     )
-                data_tmp = []
+                data_tmp: list[list[float | int | str]] = []
                 for i in range(int(n_rows)):
-                    data_tmp.append(  # pyright: ignore[reportUnknownMemberType]
+                    data_tmp.append(
                         [_parse_val(d[0], dtypes[0])]
                         + [
                             _parse_val(v, t)

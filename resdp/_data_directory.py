@@ -208,6 +208,7 @@ ValueType = (
     | Sequence[pd.Timestamp]
     | pd.Timestamp
     | RecordValueType
+    | dict[str, pd.DataFrame]
 )
 DataType = dict[str, list[tuple[str, ValueType]]]
 IntType = int | np.signedinteger
