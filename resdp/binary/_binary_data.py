@@ -43,30 +43,30 @@ class BinaryFileData(UserList[BinaryAttribute]):
             )
 
     @property
-    def names(self):
+    def names(self) -> tuple[str, ...]:
         return tuple([entry.name for entry in self])
 
     def tell(self) -> int:
         return self._pos
 
-    def seek(self, pos: int):
+    def seek(self, pos: int) -> None:
         if pos >= len(self):
             raise ValueError()
         self._pos = pos
 
-    def _find(self, iter: Iterable[int], name: str):
+    def _find(self, iter: Iterable[int], name: str) -> int | None:
         for i in iter:
             if self[i].name == name:
                 return i
         return None
 
-    def find(self, name: str):
+    def find(self, name: str) -> int | None:
         return self._find(range(self._pos, len(self)), name)
 
-    def find_prev(self, name: str):
+    def find_prev(self, name: str) -> int | None:
         return self._find(range(self._pos, 0, -1), name)
 
-    def find_unique(self, name: str):
+    def find_unique(self, name: str) -> int | None:
         values: list[int] = []
         for i in range(0, len(self)):
             if self[i].name == name:
