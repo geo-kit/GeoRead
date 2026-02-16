@@ -2357,6 +2357,23 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
     'FLUXNUM': KeywordSpecification(
         'FLUXNUM', DataTypes.ARRAY, ArraySpecification(dtype=int), (SECTIONS.GRID,)
     ),
+    'MULTREGT': KeywordSpecification(
+        'MULTREGT',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'START_REGION',
+                'END_REGION',
+                'MULT',
+                'DIRECTION',
+                'NNC',
+                'REGION_TYPE',
+            ],
+            dtypes=('int', 'int', 'float', 'text', 'text', 'text'),
+            terminated=True,
+        ),
+        (SECTIONS.GRID, SECTIONS.EDIT, SECTIONS.SCHEDULE),
+    ),
 }
 
 
