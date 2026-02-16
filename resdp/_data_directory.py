@@ -2349,7 +2349,7 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
         (
             SECTIONS.GRID,
             SECTIONS.EDIT,
-            SECTIONS.SCHEDULE,
+            SECTIONS.REGIONS,
             SECTIONS.PROPS,
             SECTIONS.SOLUTION,
         ),
@@ -2373,6 +2373,9 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
             terminated=True,
         ),
         (SECTIONS.GRID, SECTIONS.EDIT, SECTIONS.SCHEDULE),
+    ),
+    'SWATINIT': KeywordSpecification(
+        'SWATINIT', DataTypes.ARRAY, ArraySpecification(dtype=float), (SECTIONS.PROPS,)
     ),
 }
 
