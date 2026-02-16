@@ -2354,6 +2354,9 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
             SECTIONS.SOLUTION,
         ),
     ),
+    'FLUXNUM': KeywordSpecification(
+        'FLUXNUM', DataTypes.ARRAY, ArraySpecification(dtype=int), (SECTIONS.GRID,)
+    ),
 }
 
 
