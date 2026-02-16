@@ -5,6 +5,7 @@ from enum import Enum, auto
 import itertools
 from typing import Final, Literal, NamedTuple, cast
 
+from numpy.matlib import dtypes
 import pandas as pd
 import numpy.typing as npt
 import numpy as np
@@ -2376,6 +2377,14 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
     ),
     'SWATINIT': KeywordSpecification(
         'SWATINIT', DataTypes.ARRAY, ArraySpecification(dtype=float), (SECTIONS.PROPS,)
+    ),
+    'TRACER': KeywordSpecification(
+        'TRACER',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=['INDICATOR', 'FLUID'], dtypes=['text', 'text'], terminated=True
+        ),
+        (SECTIONS.PROPS,),
     ),
 }
 
