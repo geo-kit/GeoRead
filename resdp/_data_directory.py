@@ -5,7 +5,6 @@ from enum import Enum, auto
 import itertools
 from typing import Final, Literal, NamedTuple, cast
 
-from numpy.matlib import dtypes
 import pandas as pd
 import numpy.typing as npt
 import numpy as np
