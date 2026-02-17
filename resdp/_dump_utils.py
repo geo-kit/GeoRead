@@ -363,17 +363,15 @@ DUMP_ROUTINES: dict[
         keyword_spec, val, buf
     ),
     None: lambda keyword_spec, _, buf, ___: _dump_no_data(keyword_spec, buf),
-    DataTypes.SINGLE_STATEMENT: lambda keyword_spec,
-    val,
-    buf,
-    _: _dump_single_statement(keyword_spec, val, buf),
+    DataTypes.SINGLE_STATEMENT: lambda keyword_spec, val, buf, _: (
+        _dump_single_statement(keyword_spec, val, buf)
+    ),
     DataTypes.RECORDS: lambda keyword_spec, val, buf, _: _dump_records(
         keyword_spec, val, buf
     ),
-    DataTypes.ARRAY_WITH_UNITS: lambda keyword_spec,
-    val,
-    buf,
-    _: _dump_array_with_units(keyword_spec, val, buf),
+    DataTypes.ARRAY_WITH_UNITS: lambda keyword_spec, val, buf, _: (
+        _dump_array_with_units(keyword_spec, val, buf)
+    ),
 }
 
 

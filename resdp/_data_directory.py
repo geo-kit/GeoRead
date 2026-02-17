@@ -2319,6 +2319,72 @@ DATA_DIRECTORY: Final[dict[str, KeywordSpecification | None]] = {
         ),
         (SECTIONS.SCHEDULE,),
     ),
+    'MULTFLT': KeywordSpecification(
+        'MULTFLT',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=['NAME', 'TRANSMISSIBILITY_MULT', 'THERMAL_MULT'],
+            dtypes=('text', 'float', 'float'),
+            terminated=True,
+        ),
+        (SECTIONS.GRID, SECTIONS.EDIT, SECTIONS.SCHEDULE),
+    ),
+    'EQUALS': KeywordSpecification(
+        'EQUALS',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=(
+                'ARR',
+                'MULTIPLYER',
+                'IMIN',
+                'IMAX',
+                'JMIN',
+                'JMAX',
+                'KMIN',
+                'KMAX',
+            ),
+            dtypes=cast(list[DTypeString], ['text', 'float'] + ['int'] * 6),
+            terminated=True,
+        ),
+        (
+            SECTIONS.GRID,
+            SECTIONS.EDIT,
+            SECTIONS.REGIONS,
+            SECTIONS.PROPS,
+            SECTIONS.SOLUTION,
+        ),
+    ),
+    'FLUXNUM': KeywordSpecification(
+        'FLUXNUM', DataTypes.ARRAY, ArraySpecification(dtype=int), (SECTIONS.GRID,)
+    ),
+    'MULTREGT': KeywordSpecification(
+        'MULTREGT',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=[
+                'START_REGION',
+                'END_REGION',
+                'MULT',
+                'DIRECTION',
+                'NNC',
+                'REGION_TYPE',
+            ],
+            dtypes=('int', 'int', 'float', 'text', 'text', 'text'),
+            terminated=True,
+        ),
+        (SECTIONS.GRID, SECTIONS.EDIT, SECTIONS.SCHEDULE),
+    ),
+    'SWATINIT': KeywordSpecification(
+        'SWATINIT', DataTypes.ARRAY, ArraySpecification(dtype=float), (SECTIONS.PROPS,)
+    ),
+    'TRACER': KeywordSpecification(
+        'TRACER',
+        DataTypes.STATEMENT_LIST,
+        StatementSpecification(
+            columns=['INDICATOR', 'FLUID'], dtypes=['text', 'text'], terminated=True
+        ),
+        (SECTIONS.PROPS,),
+    ),
 }
 
 
