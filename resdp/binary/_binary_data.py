@@ -77,6 +77,10 @@ class BinaryFileData(UserList[BinaryAttribute]):
             return None
         return values[0]
 
+    def find_all(self, name: str) -> list[int]:
+        res = [i for i, item in enumerate(self) if item.name == name]
+        return res
+
 
 class BinaryData(UserDict[FileType, BinaryFileData]):
     def __init__(self, path_to_results: pathlib.Path, basename: str):
