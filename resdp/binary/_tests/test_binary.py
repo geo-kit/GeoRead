@@ -91,6 +91,7 @@ def test_find(egg_binary_data: resdp.binary.BinaryData):
 
 
 def test_find_all(egg_binary_data: resdp.binary.BinaryData):
+    """Test `BinaryFileData.find_all`."""
     assert egg_binary_data['UNSMRY'].find_all('PARAMS') == [i for i in range(3, 364, 3)]
 
 
