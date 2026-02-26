@@ -90,6 +90,10 @@ def test_find(egg_binary_data: resdp.binary.BinaryData):
     assert egg_binary_data['UNSMRY'].find('SEQHDR') is None
 
 
+def test_find_all(egg_binary_data: resdp.binary.BinaryData):
+    assert egg_binary_data['UNSMRY'].find_all('PARAMS') == [i for i in range(3, 364, 3)]
+
+
 def test_find_prev(egg_binary_data: resdp.binary.BinaryData):
     """Test `BinaryFileData.find_prev`."""
     assert egg_binary_data['UNSMRY'].find_prev('PARAMS') is None
