@@ -8,7 +8,7 @@ import logging
 import pathlib
 import shlex
 from types import TracebackType
-from typing import Literal, Protocol, Self, TextIO, cast
+from typing import Literal, Protocol, Self, TextIO, cast, runtime_checkable
 import uuid
 import re
 import warnings
@@ -86,10 +86,25 @@ class PReadBuf(Protocol):
         ...
 
 
+@runtime_checkable
+class PBufPosition(Protocol):
+    @property
+    def line_number(self) -> int:
+        """Current line number."""
+        ...
+
+    @property
+    def current_file(self) -> pathlib.Path:
+        """Current file."""
+        ...
+
+
 def _load_string(
     keyword_spec: SpecificationType | None, buf: PReadBuf
 ) -> str | pd.Timestamp:
+    start_line = buf.line_number if isinstance(buf, PBufPosition) else None
     line = next(buf)
+
     if "'" in line:
         split = re.split(r"'(.*)'", line)
     elif '"' in line:
@@ -113,7 +128,11 @@ def _load_string(
         val = line
         line = next(buf)
         if not line.startswith('/'):
-            warnings.warn('Data was not properly terminated.')
+            warnings.warn(
+                _format_warning_messsage(
+                    'Data was not properly terminated.', start_line, buf
+                )
+            )
             _ = buf.prev()
     val = re.sub(r'"(.*?)"', r'\1', val)
     val = re.sub(r'\'(.*?)\'', r'\1', val)
@@ -682,6 +701,7 @@ def _load_statement_list(keyword_spec: SpecificationType, buf: PReadBuf):
 
 
 def _load_no_data(keyword_spec: SpecificationType | None, buf: PReadBuf):
+    start_line = buf.line_number if isinstance(buf, PBufPosition) else None
     if keyword_spec is None:
         return None
     if not isinstance(keyword_spec, NoDataSpecification):
@@ -692,7 +712,11 @@ def _load_no_data(keyword_spec: SpecificationType | None, buf: PReadBuf):
         return None
     line = next(buf)
     if not line.startswith('/'):
-        raise ValueError('Data is not properly terminated.')
+        raise ValueError(
+            _format_warning_messsage(
+                'Data is not properly terminated.', start_line, buf
+            )
+        )
     return None
 
 
@@ -726,6 +750,14 @@ LOADERS: dict[
         keyword_spec, buf
     ),
 }
+
+
+def _format_warning_messsage(message: str, start_line: int | None, buf: PReadBuf):
+    if not isinstance(buf, PBufPosition):
+        return message
+    if start_line is None:
+        warnings.warn('`start_line` is None. Return original message.')
+    return ' '.join((message, f'{buf.current_file} {start_line}:{buf.line_number}'))
 
 
 class StringIteratorIO:
@@ -1001,9 +1033,16 @@ def load(
                 logger.info(
                     f'Start reading keyword {firstword}: line {lines.line_number}.'
                 )
-                data = LOADERS[keyword_spec.type](
-                    keyword_spec.specification, lines, res
-                )
+                with warnings.catch_warnings(record=True) as captured:
+                    warnings.simplefilter('always')
+
+                    data = LOADERS[keyword_spec.type](
+                        keyword_spec.specification, lines, res
+                    )
+                for w in captured:
+                    warnings.warn(
+                        f'While reading keyword {firstword}: ' + str(w.message)
+                    )
                 if cur_section not in res:
                     res[cur_section] = []
                 res[cur_section].append((firstword, data))
