@@ -74,4 +74,4 @@ jobs:
           pip install .[dev]
 
       - name: Run basedpyright
-        run: basedpyright --verifytypes resdp --ignoreexternal
+        run: basedpyright --verifytypes georead --ignoreexternal

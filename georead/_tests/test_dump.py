@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from resdp._data_directory import (
+from georead._data_directory import (
     DATA_DIRECTORY,
     INT_NAN,
     SECTIONS,
@@ -22,8 +22,8 @@ from resdp._data_directory import (
     TableSpecification,
     ValueType,
 )
-from resdp._dump_utils import DUMP_ROUTINES, dump
-from resdp._load_utils import load
+from georead._dump_utils import DUMP_ROUTINES, dump
+from georead._load_utils import load
 
 DUMP_ROUTINES_TEST_DATA = {
     DataTypes.TABLE_SET: [

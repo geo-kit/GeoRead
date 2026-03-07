@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import cast
 import pandas as pd
 import pytest
-from resdp._data_directory import (
+from georead._data_directory import (
     SECTIONS,
     DTypeString,
     DataType,

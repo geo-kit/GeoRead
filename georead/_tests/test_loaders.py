@@ -7,9 +7,9 @@ import pytest
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from resdp._load_utils import LOADERS, decompress_array, parse_vals
+from georead._load_utils import LOADERS, decompress_array, parse_vals
 
-from resdp._data_directory import (
+from georead._data_directory import (
     INT_NAN,
     ArrayWithUnits,
     DataType,

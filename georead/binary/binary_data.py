@@ -1,3 +1,5 @@
+"""Classes and functions for reading model binary files."""
+
 from collections import UserDict, UserList
 from collections.abc import Iterable
 import pathlib
@@ -9,9 +11,28 @@ FileType = Literal['EGRID', 'INIT', 'UNRST', 'UNSMRY', 'X*', 'SMSPEC']
 
 
 class BinaryAttribute:
+    """Single attribute in binary file."""
+
     def __init__(
         self, path: pathlib.Path, name: str, data_type: str, start: int, n_elements: int
     ):
+        """
+        Initialize attribute.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Path to the model.
+        name : str
+            Attribute name.
+        data_type : str
+            Type of the attribute data.
+        start : int
+            Starting position in the file.
+        n_elements : int
+            Number of elements.
+
+        """
         self._path: pathlib.Path = path
         self._name: str = name
         self._data_type: str = data_type

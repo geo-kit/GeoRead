@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 
-from resdp._load_utils import StringIteratorIO
+from georead._load_utils import StringIteratorIO
 
 RESULT_LINES = (
     'line 1',

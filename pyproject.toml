@@ -1,5 +1,5 @@
 [project]
-name = 'resdp'
+name = 'georead'
 version = "0.0.1"
 dependencies = [
     'pandas',
@@ -24,14 +24,14 @@ ignore = [
 quote-style = 'single'
 
 [tool.setuptools.package-data]
-'resdp' = ["py.typed"]
+'georead' = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 
 [dependency-groups]
 dev = [
-    'resdp[test]',
+    'georead[test]',
     'ruff',
     'pandas-stubs>=2.3.3',
     'basedpyright',

@@ -73,7 +73,13 @@ def read_binary_data(path: pathlib.Path, data_type: str, start: int, n_elements:
     return data
 
 
-def decode(data: bytes, data_type: str, n_elements: int):
+def decode(
+    data: bytes, data_type: str, n_elements: int
+) -> (
+    np.ndarray[tuple[int], np.dtype[np.float64]]
+    | np.ndarray[tuple[int], np.dtype[np.int_]]
+    | np.ndarray[tuple[int], np.dtype[np.str_]]
+):
     element_size, fmt, element_skip = _get_type_info(data_type)
     n_skip = math.floor((n_elements - 1) / element_skip)
     skip_elements = 8 // element_size

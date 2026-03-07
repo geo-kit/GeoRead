@@ -7,8 +7,8 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from resdp._data_directory import DataType, ValueType
-from resdp._load_utils import load
+from georead._data_directory import DataType, ValueType
+from georead._load_utils import load
 
 
 def test_load():
