@@ -1,6 +1,25 @@
 [![Python](https://img.shields.io/badge/python-3-blue.svg)](https://python.org)
 
 
-# DeepField
+# GeoRead
 
 Python library for reading reservoir model data.
+
+## Features
+* Read reservoir models in Eclipse (E100, E300) format.
+* Read Eclipse binary files
+
+## Usage
+Reading model in Eclipse text format.
+```python
+import pathlib
+from georead import load
+data = load(pathlib.Path('path_to_model.DATA'))
+```
+Reading model binary files.
+```python
+import pathlib
+import georead.binary
+binary_data = georead.binary.load(pathlib.Path('path_to_model.DATA'))
+```
+
