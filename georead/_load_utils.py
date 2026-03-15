@@ -28,6 +28,7 @@ from ._data_directory import (
     DataType,
     DataTypes,
     IntType,
+    KeywordSpecification,
     NoDataSpecification,
     NpArray,
     ObjectSpecification,
@@ -977,8 +978,10 @@ def _get_expected_line(buf: PReadBuf):
 
 def load(
     path: pathlib.Path,
+    *,
     logger: logging.Logger | None = None,
     encoding: str | None = None,
+    directory_extension: dict[str, KeywordSpecification | None] | None = None,
 ) -> DataType:
     """
     Load model data.
@@ -991,6 +994,8 @@ def load(
         Logger.
     encoding : str | None, default None
         Encoding.
+    directory_extension: dict[str, KeywordSpecification | None] | None
+        Specifications for new keywords or altered specificatios for current keywords.
 
     Returns
     -------
@@ -998,7 +1003,10 @@ def load(
         Model data.
 
     """
+    if directory_extension is None:
+        directory_extension = {}
     res: DataType = {}
+
     sections = [sec.value for sec in SECTIONS]
     if logger is None:
         logger = logging.getLogger(str(uuid.uuid4()))
@@ -1008,6 +1016,7 @@ def load(
 
     logger.info(f'Start reading {filename}')
     cur_section = ''
+    directory = DATA_DIRECTORY | directory_extension
     with StringIteratorIO(path, encoding=encoding, logger=logger) as lines:
         for line in lines:
             if not line:
@@ -1019,8 +1028,8 @@ def load(
                 if cur_section not in res:
                     res[cur_section] = []
                 continue
-            if firstword in DATA_DIRECTORY:
-                keyword_spec = DATA_DIRECTORY[firstword]
+            if firstword in directory:
+                keyword_spec = directory[firstword]
                 if keyword_spec is None:
                     keyword_spec = get_dynamic_keyword_specification(firstword, res)
                 keyword_sections = [sec.value for sec in keyword_spec.sections]
