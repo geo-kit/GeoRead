@@ -1,4 +1,4 @@
-"""Test updating data directory"""
+"""Test loading model with updating keyword directory."""
 
 import pathlib
 import pickle
@@ -14,6 +14,7 @@ from .test_load_model import validate_data
 
 
 def test_update_keyword():
+    """Load Egg model with renaming columns for DIMENS keyword."""
     keyword_update: dict[str, KeywordSpecification | None] = {
         'DIMENS': KeywordSpecification(
             'DIMENS',
@@ -40,6 +41,7 @@ def test_update_keyword():
 
 
 def test_new_keyword():
+    """Load Egg model with DIMENS keyword renamed."""
     keyword_update: dict[str, KeywordSpecification | None] = {
         'DIMENS_TEST': KeywordSpecification(
             'DIMENS',
