@@ -22,6 +22,10 @@ def test_load():
     ) as f:
         data_expected = pickle.load(f)  # pyright: ignore[reportAny]
         data_expected = cast(DataType, data_expected)
+    validate_data(data, data_expected)
+
+
+def validate_data(data: DataType, data_expected: DataType):
     for section in data_expected:
         for r, e in zip(data[section], data_expected[section], strict=True):
             assert r[0] == e[0]
