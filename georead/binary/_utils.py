@@ -13,7 +13,7 @@ _DATA_TYPES = {
     'CHAR': (8, '8s', 105),
     'MESS': (8, '8s', 105),
 }
-for val in range(8, 40):
+for val in range(8, 50):
     _DATA_TYPES['C0{}'.format(val)] = (val, '{}s'.format(val), 105)
 
 
