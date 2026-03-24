@@ -6,3 +6,6 @@ INCLUDE
 inc1.inc
 /
 line 7
+
+INCLUDE
+"include/inc2.inc"
