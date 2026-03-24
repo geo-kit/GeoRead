@@ -12,6 +12,9 @@ RESULT_LINES = (
     'inc1 line 1',
     'inc1 line 3',
     'line 7',
+    'inc2 line 1',
+    'inc3 line 1',
+    'inc2 line 5',
 )
 
 

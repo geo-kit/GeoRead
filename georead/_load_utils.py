@@ -769,6 +769,7 @@ class StringIteratorIO:
         path: pathlib.Path,
         encoding: str | None = None,
         logger: logging.Logger | None = None,
+        root_dir: pathlib.Path | None = None,
     ):
         """
         Initialize.
@@ -781,9 +782,15 @@ class StringIteratorIO:
             Encoding.
         logger : logging.Logger | None, default None
             Logger.
+        root_dir : pathlib.Path | None, default None
+            Root directory to evaluate relative path, if None directory of the `path`
+            is used.
 
         """
         self._path: pathlib.Path = path
+        self._root_dir: pathlib.Path = (
+            root_dir if root_dir is not None else self._path.parent
+        )
         if (encoding is not None) and encoding.startswith('auto'):
             encoding_tmp = encoding.split(':')
             if len(encoding_tmp) > 1:
@@ -885,13 +892,15 @@ class StringIteratorIO:
         return next(self)
 
     def _include_file(self, path: str | pathlib.Path):
-        path = self._path.parent.joinpath(pathlib.Path(path))
+        path = self._root_dir.joinpath(pathlib.Path(path))
         if self._stack is None:
             raise ValueError('`self._stack` should not be None.')
         with self._stack as stack:
             self._logger.info('INCLUDE keyword found.')
             self._include = stack.enter_context(
-                StringIteratorIO(path, self._encoding, logger=self._logger)
+                StringIteratorIO(
+                    path, self._encoding, logger=self._logger, root_dir=self._root_dir
+                )
             )
             self._stack = stack.pop_all()
 
