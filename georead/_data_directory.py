@@ -165,7 +165,6 @@ NpFloatingArray = (
     npt.NDArray[np.float16]
     | npt.NDArray[np.float32]
     | npt.NDArray[np.float64]
-    | npt.NDArray[np.float128]
 )
 NpIntegerArray = (
     npt.NDArray[np.int8]
