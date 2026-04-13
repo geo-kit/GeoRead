@@ -15,7 +15,20 @@ INT_NAN = -99999999
 FLUID_KEYWORDS = ('OIL', 'GAS', 'WATER', 'DISGAS')
 ORTHOGONAL_GRID_KEYWORDS = ('DX', 'DY', 'DZ', 'TOPS', 'ACTNUM', 'DXV', 'DYV', 'DZV')
 ROCK_GRID_KEYWORDS = ('PORO', 'PERMX', 'PERMY', 'PERMZ', 'NTG')
-TABLES_KEYWORDS = ('DENSITY', 'PVTO', 'PVTG', 'PVDG', 'PVDO', 'PVTW', 'PVCDO', 'SWOF', 'SGOF', 'RSVD', 'ROCK')
+# temporary local test ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TABLES_KEYWORDS = (
+    'DENSITY',
+    'PVTO',
+    'PVTG',
+    'PVDG',
+    'PVDO',
+    'PVTW',
+    'PVCDO',
+    'SWOF',
+    'SGOF',
+    'RSVD',
+    'ROCK',
+)
 FIELD_SUMMARY_KEYWORDS = (
     'FOPR',
     'FWPR',
@@ -162,9 +175,7 @@ REGIONS_SUMMARY_KEYWORDS = ()
 _ATM_TO_PSI = 14.69
 
 NpFloatingArray = (
-    npt.NDArray[np.float16]
-    | npt.NDArray[np.float32]
-    | npt.NDArray[np.float64]
+    npt.NDArray[np.float16] | npt.NDArray[np.float32] | npt.NDArray[np.float64]
 )
 NpIntegerArray = (
     npt.NDArray[np.int8]
