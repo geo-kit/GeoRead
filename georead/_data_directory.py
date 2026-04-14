@@ -15,7 +15,6 @@ INT_NAN = -99999999
 FLUID_KEYWORDS = ('OIL', 'GAS', 'WATER', 'DISGAS')
 ORTHOGONAL_GRID_KEYWORDS = ('DX', 'DY', 'DZ', 'TOPS', 'ACTNUM', 'DXV', 'DYV', 'DZV')
 ROCK_GRID_KEYWORDS = ('PORO', 'PERMX', 'PERMY', 'PERMZ', 'NTG')
-# temporary local test ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 TABLES_KEYWORDS = (
     'DENSITY',
     'PVTO',
