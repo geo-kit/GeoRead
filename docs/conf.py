@@ -1,4 +1,4 @@
-# pylint: skip-file
+# ruff: noqa
 # -- Path setup --------------------------------------------------------------
 
 import os
