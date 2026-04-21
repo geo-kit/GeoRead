@@ -464,7 +464,7 @@ def _nan_to_none(val: IntType | np.floating | str):
 def dump(
     data: DataType,
     path: pathlib.Path,
-    inplace_scedule: bool = False,
+    inplace_schedule: bool = False,
     filename: str | None = None,
 ) -> None:
     """
@@ -476,7 +476,7 @@ def dump(
         Model data.
     path : pathlib.Path
         Path to dump the model.
-    inplace_scedule : bool, default False.
+    inplace_schedule : bool, default False.
         Should schedule be dumped inplace.
     filename : str | None, default None.
         Name of the main model file, if None filename is taken from `TITLE` field in the `RUNSPEC`.
@@ -516,7 +516,7 @@ def dump(
             if section in data:
                 if section != '':
                     _ = buf.write(f'{section}\n\n')
-                if section == 'SCHEDULE' and not inplace_scedule:
+                if section == 'SCHEDULE' and not inplace_schedule:
                     schedule_path = include_dir / 'schedule.inc'
                     _ = buf.write('INCLUDE\n')
                     _ = buf.write(('"' + str(schedule_path.relative_to(path))) + '"')
