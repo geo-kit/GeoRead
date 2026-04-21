@@ -24,6 +24,9 @@ ignore = [
 [tool.ruff.format]
 quote-style = 'single'
 
+[tool.basedpyright]
+exclude = ["docs/*"]
+
 [tool.setuptools.package-data]
 'georead' = ["py.typed"]
 
