@@ -23,3 +23,5 @@ import georead.binary
 binary_data = georead.binary.load(pathlib.Path('path_to_model.DATA'))
 ```
 
+For more details on API, see the [documantation](https://geo-kit.github.io/GeoRead/).
+
