@@ -235,16 +235,13 @@ class BinaryData(UserDict[FileType, BinaryFileData]):
 
         """
         super().__init__()
-        for ext in ('EGRID', 'INIT', 'UNRST', 'UNSMRY', 'SMSPEC'):
-            filename = basename + f'.{ext}'
-            found_files: list[pathlib.Path] = []
-            for f in path_to_results.iterdir():
-                if f.is_file() and f.name.lower() == filename.lower():
-                    found_files.append(f)
-            if len(found_files) > 1:
-                raise ValueError(f'{path_to_results} contains multiple {ext} files.')
-            if len(found_files) == 1:
-                self[ext] = BinaryFileData(found_files[0])
+        extensions = ['EGRID', 'INIT', 'UNRST', 'UNSMRY', 'SMSPEC']
+        for f in path_to_results.iterdir():
+            if f.is_file() and f.suffix.upper().removeprefix('.') in extensions:
+                ext = f.suffix.upper().removeprefix('.')
+                if ext in self:
+                    raise ValueError(f'{path_to_results} contains multiple {ext} files.')
+                self[ext] = BinaryFileData(f)
 
 
 def load(model_path: pathlib.Path) -> BinaryData | None:
