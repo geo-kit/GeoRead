@@ -986,7 +986,7 @@ def _get_expected_line(buf: PReadBuf):
 
 
 def load(
-    path: pathlib.Path,
+    path: pathlib.Path | str,
     *,
     logger: logging.Logger | None = None,
     encoding: str | None = None,
@@ -997,8 +997,8 @@ def load(
 
     Parameters
     ----------
-    path : pathlib.Path
-        Path to main model file.
+    path : str or pathlib.Path
+        Path to the main model file.
     logger : logging.Logger | None, default None
         Logger.
     encoding : str | None, default None
@@ -1021,6 +1021,10 @@ def load(
         logger = logging.getLogger(str(uuid.uuid4()))
         logger.addHandler(logging.NullHandler())
         logger.propagate = False
+
+    if not isinstance(path, pathlib.Path):
+        path = pathlib.Path(path)
+
     filename = path.name
 
     logger.info(f'Start reading {filename}')

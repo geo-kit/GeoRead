@@ -244,13 +244,13 @@ class BinaryData(UserDict[FileType, BinaryFileData]):
                 self[ext] = BinaryFileData(f)
 
 
-def load(model_path: pathlib.Path) -> BinaryData | None:
+def load(model_path: pathlib.Path | str) -> BinaryData | None:
     """
     Load binary data.
 
     Parameters
     ----------
-    model_path : pathlib.Path
+    model_path : pathlib.Path or str
         Path to the model .data file.
 
     Returns
@@ -259,6 +259,9 @@ def load(model_path: pathlib.Path) -> BinaryData | None:
         Loaded data.
 
     """
+    if not isinstance(model_path, pathlib.Path):
+        model_path = pathlib.Path(model_path)
+
     basename = model_path.stem
     results_dir = model_path.parent / 'RESULTS'
     if not results_dir.is_dir():
