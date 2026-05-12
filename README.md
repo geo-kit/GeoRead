@@ -12,15 +12,13 @@ Python library for reading reservoir model data.
 ## Usage
 Reading model in Eclipse text format.
 ```python
-import pathlib
 from georead import load
-data = load(pathlib.Path('path_to_model.DATA'))
+data = load('path_to_model.DATA')
 ```
 Reading model binary files.
 ```python
-import pathlib
 import georead.binary
-binary_data = georead.binary.load(pathlib.Path('path_to_model.DATA'))
+binary_data = georead.binary.load('path_to_model.DATA')
 ```
 
 For more details on API, see the [documantation](https://geo-kit.github.io/GeoRead/).
