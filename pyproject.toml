@@ -4,7 +4,8 @@ version = "0.0.1"
 dependencies = [
     'pandas',
     'numpy',
-    'chardet'
+    'chardet',
+    'h5py'
 ]
 requires-python =">=3.11"
 [project.optional-dependencies]
