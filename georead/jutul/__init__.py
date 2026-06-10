@@ -2,4 +2,4 @@
 
 from .load import JutulResults, load
 
-__all__ = ["JutulResults", "load"]
+__all__ = ['JutulResults', 'load']
