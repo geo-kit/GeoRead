@@ -16,9 +16,6 @@ test = [
 [tool.setuptools.packages.find]
 include = ["georead", "georead.*"]
 
-[tool.setuptools.package-data]
-georead = ["py.typed"]
-
 [tool.ruff]
 exclude = ["docs/*"]
 [tool.ruff.lint]
