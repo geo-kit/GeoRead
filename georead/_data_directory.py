@@ -875,10 +875,10 @@ def _get_generic_region_number(
                 raise ValueError(
                     f'Value for keyword {kw} should be of type pandas.DataFrame.'
                 )
-            if d[1][column].values[0] > 0:
-                val = d[1][column].values[0]  # pyright: ignore[reportAny]
-                if not isinstance(val, IntType):
-                    raise ValueError('Value in column {column} should be integer.')
+            val = cast(object, d[1][column].values[0])
+            if not isinstance(val, IntType):
+                raise ValueError('Value in column {column} should be integer.')
+            if val > 0:
                 return val  # pyright: ignore[reportUnknownVariableType]
     return 1
 
@@ -2542,7 +2542,7 @@ def get_dynamic_keyword_specification(
             if d[0] == 'NUMRES':
                 if not isinstance(d[1], pd.DataFrame):
                     raise ValueError('NUMRES value should be of type pandas.DataFrame.')
-                n_res = d[1].N.values[0]  # pyright: ignore[reportAny]
+                n_res = d[1].N.values[0]
                 if not isinstance(n_res, int):
                     raise ValueError('N column in NUMRES value should be of type int.')
 
@@ -2844,7 +2844,7 @@ def _get_ncomp(data: DataType) -> IntType | None:
             if d[0] == 'COMPS':
                 if not isinstance(d[1], pd.DataFrame):
                     raise ValueError('COMPS value should be pandas.DataFrame.')
-                n_comp = d[1].N.values[0]  # pyright: ignore[reportAny]
+                n_comp = d[1].N.values[0]
                 if not isinstance(n_comp, IntType):
                     raise ValueError(
                         'N column in the "NCOMPS" should be of integer type.'
@@ -2856,7 +2856,7 @@ def _get_ncomp(data: DataType) -> IntType | None:
             if d[0] == 'NCOMPS':
                 if not isinstance(d[1], pd.DataFrame):
                     raise ValueError('NCOMPS value should be pandas.DataFrame.')
-                n_comp = d[1].N.values[0]  # pyright: ignore[reportAny]
+                n_comp = d[1].N.values[0]
                 if not isinstance(n_comp, IntType):
                     raise ValueError(
                         'N column in the "NCOMPS" should be of integer type.'

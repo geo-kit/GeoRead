@@ -3,7 +3,7 @@
 from collections import UserDict, UserList
 from collections.abc import Iterable
 import pathlib
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 
@@ -235,12 +235,14 @@ class BinaryData(UserDict[FileType, BinaryFileData]):
 
         """
         super().__init__()
-        extensions = ['EGRID', 'INIT', 'UNRST', 'UNSMRY', 'SMSPEC']
+        extensions: set[FileType] = {'EGRID', 'INIT', 'UNRST', 'UNSMRY', 'SMSPEC'}
         for f in path_to_results.iterdir():
             if f.is_file() and f.suffix.upper().removeprefix('.') in extensions:
-                ext = f.suffix.upper().removeprefix('.')
+                ext = cast(FileType, f.suffix.upper().removeprefix('.'))
                 if ext in self:
-                    raise ValueError(f'{path_to_results} contains multiple {ext} files.')
+                    raise ValueError(
+                        f'{path_to_results} contains multiple {ext} files.'
+                    )
                 self[ext] = BinaryFileData(f)
 
 
