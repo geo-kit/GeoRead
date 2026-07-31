@@ -16,11 +16,13 @@ Python-библиотека для чтения данных геологиче�
 Чтение модели в текстовом формате Eclipse.
 ```python
 from georead import load
+
 data = load('path_to_model.DATA')
 ```
 Чтение бинарных файлов модели.
 ```python
 import georead.binary
+
 binary_data = georead.binary.load('path_to_model.DATA')
 ```
 
