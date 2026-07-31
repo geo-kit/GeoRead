@@ -1,5 +1,8 @@
 [![Python](https://img.shields.io/badge/python-3-blue.svg)](https://python.org)
 
+### 🌐 Multi-Language Support
+
+**English** | [Русский](./translations/ru/README.md)
 
 # GeoRead
 
