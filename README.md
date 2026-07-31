@@ -1,5 +1,8 @@
 [![Python](https://img.shields.io/badge/python-3-blue.svg)](https://python.org)
 
+### 🌐 Multi-Language Support
+
+**English** | [Русский](./translations/ru/README.md)
 
 # GeoRead
 
@@ -13,11 +16,13 @@ Python library for reading reservoir model data.
 Reading model in Eclipse text format.
 ```python
 from georead import load
+
 data = load('path_to_model.DATA')
 ```
 Reading model binary files.
 ```python
 import georead.binary
+
 binary_data = georead.binary.load('path_to_model.DATA')
 ```
 
